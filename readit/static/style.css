@@ -1,0 +1,10 @@
+caption {
+    font-weight: bold;
+    font-family: sans-serif;
+    font-size: large;
+    text-align: left;
+    }
+tr > * {
+    font-family: monospace;
+    }
+
