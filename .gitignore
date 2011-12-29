@@ -6,3 +6,4 @@ lib
 *.pyc
 foreman
 heroku-client
+*.swp
