@@ -3,9 +3,15 @@ import StringIO
 import flask
 
 
+
 application = flask.Flask(__name__)
-application.HOST = '0.0.0.0'
-application.PORT = 5000
+
+class Configuration(object):
+    def __init__(self):
+        self.host = '0.0.0.0'
+        self.port = 5000
+        self.debug = True
+
 
 
 @application.route('/')
@@ -22,4 +28,7 @@ def fetch_read_list():
     response.write('</table></body></html>')
     return response.getvalue()
 
+
+def run(config):
+    application.run(host=config.host, port=config.port, debug=config.debug)
 
