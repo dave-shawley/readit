@@ -11,10 +11,11 @@ class Configuration(object):
         self.host = '0.0.0.0'
         self.port = 5000
         self.debug = True
+        self.mongo_url = 'mongodb://localhost/'
 
 
 
-@application.route('/')
+@application.route('/config')
 def fetch_read_list():
     response = StringIO.StringIO()
     response.write('<html><head><title>Settings</title></head><body>')

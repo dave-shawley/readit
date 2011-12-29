@@ -3,8 +3,11 @@ import readit
 
 if __name__ == '__main__':
     config = readit.Configuration()
-    port = os.environ.get('PORT')
-    if port:
-        config.port = int(port)
+    value = os.environ.get('PORT')
+    if value:
+        config.port = int(value)
+    value = os.environ.get('MONGOURL')
+    if value:
+        config.mongo_url = value
     readit.run(config)
 
