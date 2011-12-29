@@ -1,1 +1,1 @@
-web: python readit.py
+web: python web.py
