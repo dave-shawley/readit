@@ -7,3 +7,4 @@ lib
 foreman
 heroku-client
 *.swp
+.env

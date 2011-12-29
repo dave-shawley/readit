@@ -14,20 +14,25 @@ class Configuration(object):
         self.mongo_url = 'mongodb://localhost/'
         self.enable_config = False
 
+class Response(StringIO.StringIO):
+    def add_table(self, name, data):
+        self.write('<table><caption><h2>' + name + '</h2></caption>')
+        for (k, v) in data.iteritems():
+            self.write('<tr><th>')
+            self.write(k)
+            self.write('</th><td>')
+            self.write(v)
+            self.write('</td></tr>')
+        self.write('</table>')
 
 
 @application.route('/config')
 def fetch_read_list():
-    response = StringIO.StringIO()
+    response = Response()
     response.write('<html><head><title>Settings</title></head><body>')
-    response.write('<table>')
-    for (k, v) in application.config: #os.environ.iteritems():
-        response.write('<tr><th>')
-        response.write(k)
-        response.write('</th><td>')
-        response.write(v)
-        response.write('</td></tr>')
-    response.write('</table></body></html>')
+    response.add_table('application.config', application.config)
+    response.add_table('os.environ', os.environ)
+    response.write('</body></html>')
     return response.getvalue()
 
 
