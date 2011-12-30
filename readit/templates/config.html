@@ -1,8 +1,9 @@
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
 <head>
 <title>Configuration</title>
-<link rel="stylesheet" type="text/css"
-    href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}"/>
 </head>
 
 <body>
@@ -12,7 +13,6 @@
      <tr><th>{{ key }}</th><td>{{ environ[key] }}</td></tr>
  {% endfor %}
 </table>
-
 <table>
  <caption>config</caption>
  {% for key in config %}
@@ -20,5 +20,6 @@
  {% endfor %}
 </table>
 </body>
+
 </html>
 

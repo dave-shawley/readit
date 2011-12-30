@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+
+{% block body %}
+<p class="listname">Read it! List for {{ g.user.name }}</p>
+
+<table>
+  {% for reading in read_list %}
+  <tr>
+    <td class="title">{{ reading['title'] }}</td>
+    <td class="link">{{ reading['link'] }}</td>
+    <td class="time">{{ reading['when'] }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endblock %}
+
+{% block buttons %}
+<span class="button">
+ <a href="{{ url_for('openid_logout') }}">Logout</a>
+</span>
+{% endblock %}
+

@@ -1,0 +1,13 @@
+@font-face {
+	font-family: Computer Modern;
+	src: url(cmr12.ttf);
+}
+@font-face {
+    font-family: Computer Modern Slanted;
+    src: url(cmsl12.ttf);
+}
+@font-face {
+    font-family: Computer Modern Sans-Serif;
+    src: url(cmss12.ttf);
+}
+

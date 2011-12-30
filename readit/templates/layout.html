@@ -1,0 +1,26 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+
+<head>
+<title>Read It!</title>
+<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+
+<body>
+
+{% for category, message in get_flashed_messages(with_categories=true) %}
+<p class="flash-{{ category }}">{{ message }}</p>
+{% endfor %}
+
+{% if error %}
+<p class="error">{{ error }}</p>
+{% endif %}
+
+{% block body %}{% endblock %}
+<div class="buttonbar">
+{% block buttons %}{% endblock %}
+</div>
+
+</body>
+</html>
+

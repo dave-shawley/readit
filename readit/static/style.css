@@ -1,3 +1,4 @@
+@import "fonts.css";
 caption {
     font-weight: bold;
     font-family: sans-serif;
@@ -6,5 +7,37 @@ caption {
     }
 tr > * {
     font-family: monospace;
+    }
+.button {
+    color: black;
+    background-color: rgb(240,240,240);
+    font-family: Computer Modern Sans-Serif, sans-serif;
+    border: 1pt solid gray;
+    padding-left: 1em;
+    padding-right: 1em;
+    padding-top: 4pt;
+    padding-bottom: 2pt;
+    border-radius: 6pt;
+    text-decoration: none;
+    font-size: 12pt;
+    }
+.button:hover {
+    border-width: 2pt;
+    background-color: rgb(224,255,255);
+    }
+.button > a {
+    color: inherit;
+    text-decoration: inherit;
+    }
+.buttonbar {
+    margin-top: 10px;
+    border-top: 2pt solid gray;
+    padding-top: 4pt;
+    text-align: left;
+    }
+.listname {
+    font-family: Computer Modern Slanted, serif;
+    font-size: 24pt;
+    font-style: italic;
     }
 

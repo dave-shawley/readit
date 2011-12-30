@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block body %}
+<form method="post" action="">
+  <a href="http://openid.net/"><img src="{{ url_for('static', filename='logo_openid.png') }}" alt="(!)" height="28pt"/></a>
+  <input style="font-family: Arial, sans-serif; font-size: 12pt" type="text" size="64" name="openid"/>
+  <input type="hidden" name="next" value="{{ next }}"/>
+</form>
+{% endblock %}
+{% block buttons %}
+<span class="button">
+ <a href="#" onclick="javascript:forms[0].submit()">Login with OpenID</a>
+</span>
+{% endblock %}
+
