@@ -1,7 +1,7 @@
 import flask
 
 from application import app, Configuration
-from mongo import get_db
+from user import ParameterError, User
 import openid # forces registrations
 
 

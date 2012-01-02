@@ -8,3 +8,4 @@ foreman
 heroku-client
 *.swp
 .env
+docs/_build
