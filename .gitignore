@@ -9,3 +9,4 @@ heroku-client
 *.swp
 .env
 docs/_build
+*.egg-info

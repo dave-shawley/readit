@@ -1,9 +1,9 @@
 import flask
 
 from application import app, Configuration
+from reading import Reading
 from user import ParameterError, User
 import openid # forces registrations
-
 
 
 def run(config=None):
