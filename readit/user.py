@@ -77,7 +77,7 @@ class User(object):
         with either my :py:attr:`.id` or :py:attr:`.open_id`.  If this is the
         first time that I am stored, then a new :py:attr:`id` attribute will
         be assigned."""
-        _get_db().save(self._user_dict)
+        _get_db().users.save(self._user_dict)
 
     def get_readings(self):
         """Find my readings.
