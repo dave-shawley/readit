@@ -40,4 +40,46 @@ tr > * {
     font-size: 24pt;
     font-style: italic;
     }
+.flash {
+    border: 1pt solid black;
+    background-color: rgb(255, 248, 220);
+    color: black;
+    margin-left: 10%;
+    margin-right: 10%;
+    padding-top: 12pt;
+    padding-left: 5%;
+    padding-right: 5%;
+    padding-bottom: 12pt;
+    font-family: Computer Modern Slanted, serif;
+    font-size: 10pt;
+    font-style: italic;
+    }
+.reading {
+    border: 1pt solid black;
+    padding-left: 2em;
+    padding-top: 5px;
+    padding-bottom: 5px;
+    border-radius: 7px;
+    }
+.reading:hover {
+    background-color: rgb(250, 235, 215);
+    }
+.odd {
+    background-color: rgb(230, 230, 250);
+    }
+.even {
+    background-color: rgb(176, 196, 222);
+    }
+.title {
+    font-family: Computer Modern Bold, serif;
+    font-size: 14pt;
+    font-weight: bold;
+    color: rgb(25, 25, 112);
+    }
+.details {
+    font-family: Computer Modern, serif;
+    font-size: 10pt;
+    padding-left: 4em;
+    padding-top: 5pt;
+    }
 

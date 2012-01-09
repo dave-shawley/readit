@@ -1,17 +1,41 @@
 {% extends "layout.html" %}
 
+{% block prologue %}
+
+<script type="text/javascript"
+        src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js">
+        </script>
+<script type="text/javascript">
+$(document).ready(function() {
+  $(".reading").click(function() { window.location = $(this).attr("link"); });
+});
+function add_reading() {
+  var doc = {
+    "title": $("#title").attr("value"),
+    "link": $("#link").attr("value") };
+  alert(doc);
+}
+</script>
+{% endblock %}
+
 {% block body %}
 <p class="listname">Read it! List for {{ g.user.name }}</p>
 
-<table>
-  {% for reading in read_list %}
-  <tr>
-    <td class="title">{{ reading['title'] }}</td>
-    <td class="link">{{ reading['link'] }}</td>
-    <td class="time">{{ reading['when'] }}</td>
-  </tr>
-  {% endfor %}
-</table>
+{% set row_class = cycler('odd', 'even') %}
+{% for reading in read_list %}
+<div class="reading {{ row_class.next() }}" link="{{ reading.link }}">
+  <div class="title">{{ reading.title }}</div>
+  <div class="details">{{ reading.link }} read on {{ reading.when }}</div>
+</div>
+{% endfor %}
+
+<div class="reading {{ row_class.next() }}" link="javascript:add_reading()">
+  <form>
+    <div class="title"><input width="64" id="title" value="Title"/></div>
+    <div class="details"><input width="128" id="link" value="Link"/></div>
+  </form>
+</div>
+
 {% endblock %}
 
 {% block buttons %}

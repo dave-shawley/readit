@@ -10,4 +10,7 @@
     font-family: Computer Modern Sans-Serif;
     src: url(cmss12.ttf);
 }
-
+@font-face {
+    font-family: Computer Modern Bold;
+    src: url(cmbx12.ttf);
+}
