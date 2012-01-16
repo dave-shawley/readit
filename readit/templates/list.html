@@ -7,34 +7,112 @@
         </script>
 <script type="text/javascript">
 $(document).ready(function() {
-  $(".reading").click(function() { window.location = $(this).attr("link"); });
+  $("form.reading").mouseenter(function() { $("#menu").hide(); });
+  $("div.reading").click(function(event) {
+    var link = $(this).attr("link");
+    if (link) {
+      console.log('launching to ' + link);
+    //  window.location = $(this).attr("link");
+    }
+  })
+  .mouseenter(function(event) {
+    $("#menu").css('top', $(this).prop('offsetTop') + 5)
+              .attr('target', $(this).attr('id'))
+              .show();
+  });
+  $(".defaulted")
+    .focus(function() {
+      if ($(this).val() == $(this).prop('defaultValue')) {
+        $(this).val('');
+      }
+    })
+    .blur(function() {
+      if ($(this).val() == '') {
+        $(this).val($(this).prop('defaultValue'));
+      }
+      update_add_reading();
+    });
+  $("#menu").click(function() {
+    var reading_id = $(this).attr('target');
+    var div_element = document.getElementById(reading_id);
+    console.log('removing reading ' + reading_id);
+    $.ajax({
+      url: "/readings/" + reading_id,
+      context: jQuery(div_element),
+      success: function() {
+        $("#menu").hide();
+        $(this).fadeOut('slow', function() { $(this).remove(); });
+      },
+      error: function(jqXHR, textStatus, errorThrown) {
+        console.log('status ' + textStatus);
+        console.log('error ' + errorThrown);
+      },
+      type: 'DELETE'
+    });
+  });
 });
+
 function add_reading() {
-  var doc = {
-    "title": $("#title").attr("value"),
-    "link": $("#link").attr("value") };
-  alert(doc);
+  $.post("{{ url_for('add_reading') }}",
+    { "title": title.value, "link": link.value },
+    function(data) {
+      console.log(data);
+    },
+    "json");
 }
+
+function update_add_reading() {
+  $(".defaulted").each(function(index, entry) {
+    if (entry.defaultValue == entry.value) {
+      $(".add_reading_button").click(function(event) { event.preventDefualt()});
+      return;
+    }
+  });
+  $(".add_reading_button").unbind('click');
+}
+update_add_reading();
+
 </script>
+
+<style type="text/css">
+.del_button {
+  display: none; /* changed dynamically */
+  top: 0px; /* changed dynamically */
+  left: 12px;
+  position: absolute;
+  border: 1px solid red;
+  height: 20px;
+  width: 20px;
+  border-radius: 10px;
+  text-align: center;
+  background: white;
+  font-family: sans-serif;
+  font-weight: bold;
+  color: red;
+}
+</style>
+
 {% endblock %}
 
 {% block body %}
 <p class="listname">Read it! List for {{ g.user.name }}</p>
 
+<div id="menu" class="del_button">X</div>
+
 {% set row_class = cycler('odd', 'even') %}
 {% for reading in read_list %}
-<div class="reading {{ row_class.next() }}" link="{{ reading.link }}">
+<div class="reading {{ row_class.next() }}" link="{{ reading.link }}"
+  id="{{ reading.id }}">
   <div class="title">{{ reading.title }}</div>
   <div class="details">{{ reading.link }} read on {{ reading.when }}</div>
 </div>
 {% endfor %}
 
-<div class="reading {{ row_class.next() }}" link="javascript:add_reading()">
-  <form>
-    <div class="title"><input width="64" id="title" value="Title"/></div>
-    <div class="details"><input width="128" id="link" value="Link"/></div>
-  </form>
-</div>
+<form class="reading {{ row_class.next() }}" action="javascript:add_reading()">
+  <div class="title"><input class="defaulted" id="title" value="Title"/></div>
+  <div class="details"><input class="defaulted" id="link" value="Link"/></div>
+  <input id="add_reading_button" type="submit" class="button" value="Add Reading" />
+</form>
 
 {% endblock %}
 

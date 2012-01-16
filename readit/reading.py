@@ -1,4 +1,31 @@
+"""
+Reading related Classes
+=======================
+
+"""
 import datetime
+import flask
+import readit
+
+
+@readit.app.route('/readings', methods=['POST'])
+def add_reading():
+    readit.app.logger.debug('user ' + str(flask.g.user))
+    readit.app.logger.debug('JSON ' + str(flask.request.json))
+    readit.app.logger.debug('data ' + str(flask.request.data))
+    doc = {"title": "title",
+            "link": "link",
+            "when": datetime.datetime.now().isoformat(),
+            "_id": "uniqueidentifier"}
+    return flask.Response(
+            response=flask.json.dumps(doc),
+            mimetype='text/json')
+
+@readit.app.route('/readings/<reading_id>', methods=['DELETE'])
+def delete_reading(reading_id):
+    readit.app.logger.debug('removed ' + str(reading_id))
+    return flask.Response(status=204)
+
 
 class StringAttribute(object):
     """Attribute that coerces everything into a unicode value.
@@ -88,8 +115,8 @@ class Reading(object):
     to ``None``.
     
     >>> r = Reading()
-    >>> r.title, r.link, r.when
-    (None, None, None)
+    >>> r.id, r.title, r.link, r.when
+    (None, None, None, None)
     
     The attributes are simple data attributes.  The :py:attr:`title` and
     :py:attr:`link` attributes are strings and the :py:attr:`when` attribute
@@ -110,11 +137,45 @@ class Reading(object):
     datetime.datetime(2011, 11, 11, 0, 0)
     >>> str(r.when)
     '2011-11-11 00:00:00'
+    
+    The :py:attr:`id` attribute is the unique identifier from the persistence
+    layer.  It should only be created by the persistence layer and should be
+    undefined if this object has never been persisted.
+    
+    Reading instances can also be initialized by passing keyword arguments
+    into the initializer.
+    
+    >>> r = Reading(title='a title', link='http://foo.com')
+    >>> r.title, r.link, r.when
+    (u'a title', u'http://foo.com', None)
     """
-    def __init__(self):
-        self._title = StringAttribute()
-        self._link = StringAttribute()
-        self._when = DateTimeAttribute()
+    def __init__(self, title=None, link=None, when=None):
+        self._id = None
+        self._title = StringAttribute(title)
+        self._link = StringAttribute(link)
+        self._when = DateTimeAttribute(when)
+    @classmethod
+    def from_dict(cls, a_dict):
+        """Creates a new instance from a dictionary.
+        
+        The dictionary is required to contain entries for the :py:attr:`title`,
+        :py:attr:`link`, and :py:attr:`when` attributes.  If it does not, then
+        a :py:class:`KeyError` will be raised.
+
+        >>> inst = Reading.from_dict({})
+        Traceback (most recent call last):
+        ...
+        KeyError: 'title'
+        """
+        an_instance = cls()
+        an_instance._id = a_dict.get('_id')
+        an_instance.title = a_dict['title']
+        an_instance.link = a_dict['link']
+        an_instance.when = a_dict['when']
+        return an_instance
+    @property
+    def id(self):
+        return self._id
     def _get_title(self):
         return self._title.value
     def _set_title(self, value):
@@ -130,9 +191,4 @@ class Reading(object):
     title = property(_get_title, _set_title)
     link = property(_get_link, _set_link)
     when = property(_get_when, _set_when)
-
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod()
 

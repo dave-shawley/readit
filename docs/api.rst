@@ -2,15 +2,13 @@
 Read It's Python API
 ====================
 
-.. automodule:: readit
-
-.. autoclass:: readit.User
+.. automodule:: readit.user
    :members:
-   :member-order: groupwise
 
-.. autoclass:: ParameterError
-   :members:
-   :inherited-members:
+.. automodule:: readit.reading
+   
+   .. autoclass:: Reading
+      :members:
 
 .. automodule:: readit.openid
    :members:

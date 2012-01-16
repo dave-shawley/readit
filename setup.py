@@ -30,7 +30,6 @@ setup(
     description = 'Read article tracker',
     long_description = __doc__,
     packages = ['readit'],
-    namespace_packages = ['readit'],
     zip_safe = False,
     platforms = 'any',
     install_requires = installation_requirements,

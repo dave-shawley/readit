@@ -82,4 +82,19 @@ tr > * {
     padding-left: 4em;
     padding-top: 5pt;
     }
+.default {
+	color: rgb(95, 158, 160); /* cadetBlue */
+	}
+input.defaulted {
+	font-family: inherit;
+	font-size: inherit;
+	font-weight: inherit;
+	color: inherit;
+	background-color: inherit;
+	border: dashed 1pt rgb(47, 79, 79);
+	margin: 0;
+	padding: 7px;
+	width: 325px;
+	border-radius: 3px;
+	}
 

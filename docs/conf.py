@@ -220,5 +220,6 @@ intersphinx_mapping = {
         'http://docs.python.org/dev': None,
         'http://flask.pocoo.org/docs': None,
         'http://packages.python.org/Flask-OpenID': None,
+        'http://api.mongodb.org/python/current': None,
         }
 

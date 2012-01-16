@@ -10,8 +10,8 @@ Flask Usage
 
 .. py:data:: flask.g.user
 
-The :py:class:`User` instance for the currently active (e.g., *logged in*)
-identity or ``None``.  This is managed by :py:func:`lookup_user`,
+The :py:class:`~readit.User` instance for the currently active (e.g., *logged
+in*) identity or ``None``.  This is managed by :py:func:`lookup_user`,
 :py:func:`openid_validated`, and :py:func:`openid_logout`.
 
 .. py:data:: flask.session['user_id']

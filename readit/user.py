@@ -1,3 +1,54 @@
+"""
+User related Functions & Classes
+================================
+
+This module contains a handful of functions that are hooked into Flask
+and a single class (:py:class:`.User`) that acts as the programmatic
+interface.  A ``User`` object is a pretty simple CRUD wrapper over the
+persistence layer with *business logic* methods that manipulate the
+read item list associated with the user.
+
+Examples
+--------
+
+A :py:class:`.User` instance is created without parameters so all of
+its properties are initially empty.
+
+>>> u = User()
+>>> u.id, u.open_id, u.name, u.email
+(None, None, None, None)
+
+All of the properties are simple read/write properties except for
+:py:attr:`.User.id` which is read-only (for obvious reasons).
+
+>>> u.id = 'something'
+Traceback (most recent call last):
+...
+AttributeError: can't set attribute
+>>> u.open_id = 'foo'
+>>> u.name = u'Dave Shawley'
+>>> u.email = 42
+>>> u.id, u.open_id, u.name, u.email
+(None, 'foo', u'Dave Shawley', 42)
+
+It might be a little surprising that there is really no enforcement of
+type here, but `it is easier to ask for forgiveness than it is to get
+permission <http://en.wikipedia.org/wiki/Grace_Hopper#Anecdotes>`_.
+
+Flask Usage
+-----------
+
+.. py:data:: flask.g.db
+
+A :py:class:`pymongo.database.Database` instance connected to the Mongo
+cluster that stores our data in it.  The cluster connection is managed
+inside of the :py:class:`~readit.User` class and opened whenever it is
+needed.
+
+User API
+--------
+
+"""
 import flask
 import pymongo
 import readit
@@ -38,14 +89,19 @@ class ParameterError(Exception):
 
 class User(object):
     """I represent a user that is registered in the system.
+    
+    I am identified by a unique OpenID, have a few attributes like my
+    email address and name, and have a list of things that I have read.
+    The list of articles that I have read are available as
+    :py:class:`~readit.Reading` instances from my :py:meth:`get_readings`
+    method.
     """
     def __init__(self):
         self._user_dict = {}
 
     @property
     def id(self):
-        """The unique identifier assigned to me by the persistence layer.
-        In the case of Mongo, this the ObjectId."""
+        """The unique identifier assigned to me by the persistence layer."""
         return self._user_dict.get('_id')
 
     def get_open_id(self):
@@ -53,7 +109,7 @@ class User(object):
     def set_open_id(self, open_id):
         self._user_dict['open_id'] = open_id
     open_id = property(get_open_id, set_open_id,
-            doc="""My Open ID as a string.""")
+            doc="""My OpenID as a string.""")
 
     def get_name(self):
         return self._user_dict.get('name')
@@ -61,10 +117,10 @@ class User(object):
         self._user_dict['name'] = name
     name = property(get_name, set_name,
             doc="""My display name.  This is either the full name from
-                   the Open ID layer or the nickname.""")
+                   the OpenID layer or the nickname.""")
 
     def get_email(self):
-        return self.email
+        return self._user_dict.get('email')
     def set_email(self, email):
         self._user_dict['email'] = email
     email = property(get_email, set_email,
@@ -82,15 +138,19 @@ class User(object):
     def get_readings(self):
         """Find my readings.
         
-        :rtype: list of readings
+        :rtype: list of :py:class:`~readit.Reading` instances
         """
-        return _get_db().readings.find({'user_id': self.id})
+        readings = []
+        for doc in _get_db().readings.find({'user_id': self.id}):
+            readit.app.logger.debug('found %s', str(doc))
+            readings.append(readit.Reading.from_dict(doc))
+        return readings
 
     @staticmethod
     def find(open_id=None, user_id=None):
-        """Lookup a user by either Open ID or user ID.
+        """Lookup a user by either OpenID or user ID.
         
-        :param str open_id: Open ID.
+        :param str open_id: OpenID.
         :param str user_id: Internal user identifier.
         :rtype: :py:class:`.User`
         :raises: :py:class:`ParameterError` if neither parameter is provided

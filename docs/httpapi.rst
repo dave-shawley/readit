@@ -7,11 +7,13 @@ Read It's HTTP API
    Retrieves a standard login form that will drive the Open ID login
    process.
 
+
 .. http:post:: /login
 
    Processes a login request.
 
    :form openid: Open ID URL to authenticate with.
+
 
 .. http:get:: /logout
 
@@ -23,4 +25,11 @@ Read It's HTTP API
    session cookie.
 
    :status 303: and then redirects to :http:get:`/login`
+
+
+.. http:get:: /readings
+
+   Retrieves the reading list for the currently *logged in* user.
+
+.. vim: set ts=3 sw=3 et:
 
