@@ -1,3 +1,4 @@
+<!-- vim: set ts=2 sw=2 sts=2 et: -->
 {% extends "layout.html" %}
 
 {% block prologue %}
@@ -50,6 +51,7 @@ $(document).ready(function() {
       type: 'DELETE'
     });
   });
+  $("#add_reading_button").click(function(event) { event.preventDefault(); });
 });
 
 function add_reading() {
@@ -64,13 +66,12 @@ function add_reading() {
 function update_add_reading() {
   $(".defaulted").each(function(index, entry) {
     if (entry.defaultValue == entry.value) {
-      $(".add_reading_button").click(function(event) { event.preventDefualt()});
+      $("#add_reading_button").click(function(event) { event.preventDefualt()});
       return;
     }
   });
-  $(".add_reading_button").unbind('click');
+  $("#add_reading_button").unbind('click');
 }
-update_add_reading();
 
 </script>
 
