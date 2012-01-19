@@ -2,7 +2,7 @@ function launch_reading(event) {
 	var link = $(this).attr('link');
 	if (link) {
 		console.log('launching to ' + link);
-		//window.location = link;
+		window.location = link;
 	}
 }
 
