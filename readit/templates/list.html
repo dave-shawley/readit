@@ -4,73 +4,46 @@
 {% block prologue %}
 
 <script type="text/javascript"
-        src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js">
+        src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.js">
         </script>
+<script type="text/javascript"
+        src="{{ url_for('static', filename='ui.js') }}">
+        </script>
+
 <script type="text/javascript">
 $(document).ready(function() {
   $("form.reading").mouseenter(function() { $("#menu").hide(); });
-  $("div.reading").click(function(event) {
-    var link = $(this).attr("link");
-    if (link) {
-      console.log('launching to ' + link);
-    //  window.location = $(this).attr("link");
-    }
-  })
-  .mouseenter(function(event) {
-    $("#menu").css('top', $(this).prop('offsetTop') + 5)
-              .attr('target', $(this).attr('id'))
-              .show();
-  });
-  $(".defaulted")
-    .focus(function() {
-      if ($(this).val() == $(this).prop('defaultValue')) {
-        $(this).val('');
-      }
-    })
-    .blur(function() {
-      if ($(this).val() == '') {
-        $(this).val($(this).prop('defaultValue'));
-      }
-      update_add_reading();
+  $("div.reading").click(launch_reading).mouseenter(show_menu);
+  $(".defaulted").focus(clear_if_defaulted).blur(function() {
+    reset_if_empty(this);
+    update_add_reading();
     });
-  $("#menu").click(function() {
-    var reading_id = $(this).attr('target');
-    var div_element = document.getElementById(reading_id);
-    console.log('removing reading ' + reading_id);
-    $.ajax({
-      url: "/readings/" + reading_id,
-      context: jQuery(div_element),
-      success: function() {
-        $("#menu").hide();
-        $(this).fadeOut('slow', function() { $(this).remove(); });
-      },
-      error: function(jqXHR, textStatus, errorThrown) {
-        console.log('status ' + textStatus);
-        console.log('error ' + errorThrown);
-      },
-      type: 'DELETE'
-    });
-  });
+  $("#menu").click(remove_reading);
   $("#add_reading_button").click(function(event) { event.preventDefault(); });
 });
 
 function add_reading() {
-  $.post("{{ url_for('add_reading') }}",
-    { "title": title.value, "link": link.value },
-    function(data) {
-      console.log(data);
-    },
-    "json");
+  $.ajax({
+    url: "{{ url_for('add_reading') }}",
+    data: JSON.stringify({ "title": title.value, "link": link.value }),
+    contentType: 'application/json',
+    success: create_reading_callback,
+    error: show_error_callback,
+    type: 'POST'
+  });
 }
 
 function update_add_reading() {
+  var all_clear = true;
   $(".defaulted").each(function(index, entry) {
     if (entry.defaultValue == entry.value) {
-      $("#add_reading_button").click(function(event) { event.preventDefualt()});
-      return;
+      $("#add_reading_button").click(function(event) { event.preventDefault()});
+      all_clear = false;
     }
   });
-  $("#add_reading_button").unbind('click');
+  if (all_clear) {
+    $("#add_reading_button").unbind('click');
+  }
 }
 
 </script>
@@ -100,19 +73,29 @@ function update_add_reading() {
 
 <div id="menu" class="del_button">X</div>
 
+<div style="display:none" id="_template_" class="reading">
+ <div class="title"></div>
+ <div class="details"><span rel="link">LINK</span> read on
+                      <span rel="when">WHEN</span></div>
+</div>
+
 {% set row_class = cycler('odd', 'even') %}
 {% for reading in read_list %}
 <div class="reading {{ row_class.next() }}" link="{{ reading.link }}"
   id="{{ reading.id }}">
   <div class="title">{{ reading.title }}</div>
-  <div class="details">{{ reading.link }} read on {{ reading.when }}</div>
+  <div class="details">
+    <span rel="link">{{ reading.link }}</span> read on
+    <span rel="when">{{ reading.when.strftime("%a, %d %b %Y %H:%M:%S GMT") }}</span></div>
 </div>
 {% endfor %}
 
-<form class="reading {{ row_class.next() }}" action="javascript:add_reading()">
+<form id="add_reading_form" class="reading {{ row_class.next() }}"
+  action="javascript:add_reading()">
   <div class="title"><input class="defaulted" id="title" value="Title"/></div>
   <div class="details"><input class="defaulted" id="link" value="Link"/></div>
-  <input id="add_reading_button" type="submit" class="button" value="Add Reading" />
+  <input id="add_reading_button" type="submit" class="button"
+   value="Add Reading" />
 </form>
 
 {% endblock %}

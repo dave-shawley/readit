@@ -13,3 +13,6 @@ Read It's Python API
 .. automodule:: readit.openid
    :members:
 
+.. automodule:: readit.persistence
+   :members:
+

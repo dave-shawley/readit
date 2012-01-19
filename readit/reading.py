@@ -8,25 +8,6 @@ import flask
 import readit
 
 
-@readit.app.route('/readings', methods=['POST'])
-def add_reading():
-    readit.app.logger.debug('user ' + str(flask.g.user))
-    readit.app.logger.debug('JSON ' + str(flask.request.json))
-    readit.app.logger.debug('data ' + str(flask.request.data))
-    doc = {"title": "title",
-            "link": "link",
-            "when": datetime.datetime.now().isoformat(),
-            "_id": "uniqueidentifier"}
-    return flask.Response(
-            response=flask.json.dumps(doc),
-            mimetype='text/json')
-
-@readit.app.route('/readings/<reading_id>', methods=['DELETE'])
-def delete_reading(reading_id):
-    readit.app.logger.debug('removed ' + str(reading_id))
-    return flask.Response(status=204)
-
-
 class StringAttribute(object):
     """Attribute that coerces everything into a unicode value.
     

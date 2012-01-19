@@ -2,7 +2,11 @@ bin
 build
 include
 lib
+man
+
 .Python
+.coverage
+nosetests.xml
 *.pyc
 foreman
 heroku-client
