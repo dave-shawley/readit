@@ -1,13 +1,27 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
-
+<!-- vim: set ts=2 sw=2 sts=2 et: -->
 <head>
 <title>Read It!</title>
-<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}" />
+<style type="text/css">
+  @import "{{ url_for('static', filename='style.css') }}" (min-width: 480px);
+  @import "{{ url_for('static', filename='jqtouch.css') }}" (max-width: 480px);
+  @import "{{ url_for('static', filename='apple.css') }}" (max-width: 480px);
+  @media (min-width: 480px) {
+    .largescreen { display: inherit; }
+    .smallscreen { display: none; }
+    input[type="text"] { width: 75%; }
+  }
+  @media (max-width: 480px) {
+    .largescreen { display: none; }
+    .smallscreen { display: inherit; }
+  }
+</style>
+<meta name="viewport" content="user-scalable=no, width=device-width" />
 {% block prologue %}{% endblock %}
 </head>
 
-<body>
+<body id="jqt">
 
 {% for category, message in get_flashed_messages(with_categories=true) %}
 <p class="flash {{ category }}">{{ message }}</p>
@@ -18,9 +32,12 @@
 {% endif %}
 
 {% block body %}{% endblock %}
+
+<!--
 <div class="buttonbar">
 {% block buttons %}{% endblock %}
 </div>
+-->
 
 </body>
 </html>

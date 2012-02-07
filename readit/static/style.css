@@ -97,4 +97,6 @@ input.defaulted {
 	width: 325px;
 	border-radius: 3px;
 	}
-
+li {
+  list-style-type: none;
+}
