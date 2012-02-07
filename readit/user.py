@@ -126,7 +126,8 @@ class User(object):
         user = None
         user_dict = flask.g.db.find_user(open_id, user_id)
         if user_dict is None:
-            readit.app.logger.debug('user not found for %s', str(query))
+            readit.app.logger.debug('user not found for %s',
+                    str((open_id, user_id)))
         else:
             user = User()
             user._user_dict = user_dict.copy()
@@ -136,4 +137,7 @@ class User(object):
         return '<{0}.{1} id={2} openid={3}>'.format(self.__module__,
                 self.__class__.__name__, self.id, self.open_id)
 
+
+def find(**kwds):
+    return User.find(**kwds)
 

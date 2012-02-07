@@ -33,18 +33,6 @@ oid = flaskext.openid.OpenID(readit.app)
 _SESSION_KEY = 'user_id'
 
 
-@readit.app.before_request
-def lookup_user():
-    """Called before a request to establish :py:data:`flask.g.user`
-    based on the ``user_id`` session attribute."""
-    flask.g.user = None
-    if _SESSION_KEY in flask.session:
-        flask.g.user = readit.User.find(user_id=flask.session[_SESSION_KEY])
-        readit.app.logger.debug('found %s for %s', flask.g.user,
-                flask.session[_SESSION_KEY])
-        if flask.g.user is None:
-            flask.session.pop(_SESSION_KEY, None)
-
 @readit.app.route('/login', methods=['GET', 'POST'])
 @oid.loginhandler
 def openid_login():

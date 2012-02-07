@@ -1,10 +1,11 @@
 import flask
 
-from application import app, Configuration
-from reading import Reading
-from persistence import Persistence
-from user import User
-import openid # forces registrations
+from flaskapp import app
+
+#from reading import Reading
+#from persistence import Persistence
+#from user import User
+#import openid # forces registrations
 
 
 class ParameterError(Exception):
@@ -17,9 +18,6 @@ class NotFoundError(Exception):
         self.target = target
 
 
-def run(config=None):
-    if config is None:
-        config = Configuration()
-    app.config.update(config.values())
-    app.run(host=config.host, port=config.port, debug=config.debug)
+def run():
+    app.run()
 
