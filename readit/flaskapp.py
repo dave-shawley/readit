@@ -45,6 +45,11 @@ class Application(flask.Flask):
         self.MONGO_URL = os.environ.get('MONGOURL', 'mongodb://localhost/readit')
         self.config.from_object(self)
         self.config.from_envvar(config_envvar, silent=True)
+    def run(self, **kwds):
+        args = kwds.copy()
+        args.setdefault('host', self.HOST)
+        args.setdefault('port', self.PORT)
+        super(Application, self).run(**args)
 
 app = Application()
 open_id = flaskext.openid.OpenID(app)
