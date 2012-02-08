@@ -13,11 +13,18 @@
   </script>
 <script type="text/javascript">
 $.jQTouch({ });
+$(document).ready(function() {
+  $('.reading').click(function(arg) {
+    var $this = $(this);
+    console.log($this.attr('link'));
+    document.location = $this.attr('link');
+  });
+});
 </script>
 {% endblock %}
 
 {% block body %}
-<div id="readinglist">
+<div id="readinglist" class="active">
   <div class="toolbar">
     <h1>You Read These</h1>
     <a href="{{ url_for('logout') }}" class="button">X</a>
