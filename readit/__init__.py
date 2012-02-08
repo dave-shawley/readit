@@ -1,11 +1,10 @@
 import flask
 
+# these are are API level exports
 from flaskapp import app
-
-#from reading import Reading
-#from persistence import Persistence
-#from user import User
-#import openid # forces registrations
+from reading import Reading
+from persistence import Persistence
+from user import User
 
 
 class ParameterError(Exception):
