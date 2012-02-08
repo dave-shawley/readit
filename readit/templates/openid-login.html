@@ -1,10 +1,7 @@
 {% extends "layout.html" %}
 {% block prologue %}
 <script type="text/javascript"
-  src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.js">
-  </script>
-<script type="text/javascript"
-  src="{{ url_for('static', filename='jqtouch.js') }}">
+  src="{{ url_for('static', filename='jqtouch/jqtouch.js') }}">
   </script>
 <script type="text/javascript">
   $(document).ready(function() {
@@ -22,7 +19,7 @@
       <li>
         <a href="http://openid.net/"><img class="largescreen" src="{{ url_for('static', filename='logo_openid.png') }}" alt="(!)" height="28pt"/></a>
         <input type="text" placeholder="Your Open ID" name="openid" id="openid"/></li>
-      <li><input type="submit" name="action" value="Login" /></li>
+      <li class="largescreen"><input type="submit" name="action" value="Login" /></li>
       <input type="hidden" name="next" value="{{ next }}"/>
   </form>
 </div>

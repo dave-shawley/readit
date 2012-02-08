@@ -53,7 +53,8 @@ class Application(flask.Flask):
     """
     def __init__(self, config_envvar='APP_CONFIG'):
         super(Application, self).__init__(__package__)
-        self.config['DEBUG'] = os.environ.get('DEBUG', 'False').lower() == 'true'
+        self.config['DEBUG'] = (os.environ.get('DEBUG', 'False').lower() 
+                in [ 'true', '1', 'yes', 'y' ])
         self.config['HOST'] = os.environ.get('HOST', '0.0.0.0')
         self.config['PORT'] = int(os.environ.get('PORT', '5000'))
         self.config['SECRET_KEY'] = os.urandom(24)

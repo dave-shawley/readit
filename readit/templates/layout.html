@@ -5,8 +5,8 @@
 <title>Read It!</title>
 <style type="text/css">
   @import "{{ url_for('static', filename='style.css') }}" (min-width: 480px);
-  @import "{{ url_for('static', filename='jqtouch.css') }}" (max-width: 480px);
-  @import "{{ url_for('static', filename='apple.css') }}" (max-width: 480px);
+  @import "{{ url_for('static', filename='jqtouch/jqtouch.css') }}" (max-width: 480px);
+  @import "{{ url_for('static', filename='jqtouch/themes/apple/theme.css') }}" (max-width: 480px);
   @media (min-width: 480px) {
     .largescreen { display: inherit; }
     .smallscreen { display: none; }
@@ -18,20 +18,25 @@
   }
 </style>
 <meta name="viewport" content="user-scalable=no, width=device-width" />
+<script type="text/javascript"
+  src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.js">
+  </script>
 {% block prologue %}{% endblock %}
 </head>
 
 <body id="jqt">
 
+{% block body %}{% endblock %}
+
+<div id="messages">
 {% for category, message in get_flashed_messages(with_categories=true) %}
-<p class="flash {{ category }}">{{ message }}</p>
+<p class="flash {{ category }} info">{{ message }}</p>
 {% endfor %}
+</div>
 
 {% if error %}
 <p class="error">{{ error }}</p>
 {% endif %}
-
-{% block body %}{% endblock %}
 
 <!--
 <div class="buttonbar">

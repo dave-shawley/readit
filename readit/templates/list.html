@@ -3,106 +3,37 @@
 
 {% block prologue %}
 
-<script type="text/javascript"
-        src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.js">
-        </script>
-<script type="text/javascript"
-        src="{{ url_for('static', filename='ui.js') }}">
-        </script>
-
+<script
+  type="text/javascript"
+  src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.js">
+  </script>
+<script
+  type="text/javascript"
+  src="{{ url_for('static', filename='jqtouch/jqtouch.js') }}">
+  </script>
 <script type="text/javascript">
-$(document).ready(function() {
-  $("form.reading").mouseenter(function() { $("#menu").hide(); });
-  $("div.reading").click(launch_reading).mouseenter(show_menu);
-  $(".defaulted").focus(clear_if_defaulted).blur(function() {
-    reset_if_empty(this);
-    update_add_reading();
-    });
-  $("#menu").click(remove_reading);
-  $("#add_reading_button").click(function(event) { event.preventDefault(); });
-});
-
-function add_reading() {
-  $.ajax({
-    url: "{{ url_for('add_reading') }}",
-    data: JSON.stringify({ "title": title.value, "link": link.value }),
-    contentType: 'application/json',
-    success: create_reading_callback,
-    error: show_error_callback,
-    type: 'POST'
-  });
-}
-
-function update_add_reading() {
-  var all_clear = true;
-  $(".defaulted").each(function(index, entry) {
-    if (entry.defaultValue == entry.value) {
-      $("#add_reading_button").click(function(event) { event.preventDefault()});
-      all_clear = false;
-    }
-  });
-  if (all_clear) {
-    $("#add_reading_button").unbind('click');
-  }
-}
-
+$.jQTouch({ });
 </script>
-
-<style type="text/css">
-.del_button {
-  display: none; /* changed dynamically */
-  top: 0px; /* changed dynamically */
-  left: 12px;
-  position: absolute;
-  border: 1px solid red;
-  height: 20px;
-  width: 20px;
-  border-radius: 10px;
-  text-align: center;
-  background: white;
-  font-family: sans-serif;
-  font-weight: bold;
-  color: red;
-}
-</style>
-
 {% endblock %}
 
 {% block body %}
-<p class="listname">Read it! List for {{ g.user.name }}</p>
-
-<div id="menu" class="del_button">X</div>
-
-<div style="display:none" id="_template_" class="reading">
- <div class="title"></div>
- <div class="details"><span rel="link">LINK</span> read on
-                      <span rel="when">WHEN</span></div>
+<div id="readinglist">
+  <div class="toolbar">
+    <h1>You Read These</h1>
+    <a href="{{ url_for('logout') }}" class="button">X</a>
+  </div>
+  <ul>
+  {% set row_class = cycler('odd', 'even') %}
+  {% for reading in read_list %}
+    <li class="arrow reading {{ row_class.next() }}"
+      link="{{ reading.link }}" id="{{ reading.id }}">
+      <span><a href="{{ reading.link }}">{{ reading.title }}</a></span>
+      <div class="largescreen">
+        <span rel="link">{{ reading.link }}</span> read on
+        <span rel="when">{{ reading.when.strftime("%a, %d %b %Y %H:%M:%S GMT") }}</span>
+      </div>
+    </li>
+  {% endfor %}
+  </ul>
 </div>
-
-{% set row_class = cycler('odd', 'even') %}
-{% for reading in read_list %}
-<div class="reading {{ row_class.next() }}" link="{{ reading.link }}"
-  id="{{ reading.id }}">
-  <div class="title">{{ reading.title }}</div>
-  <div class="details">
-    <span rel="link">{{ reading.link }}</span> read on
-    <span rel="when">{{ reading.when.strftime("%a, %d %b %Y %H:%M:%S GMT") }}</span></div>
-</div>
-{% endfor %}
-
-<form id="add_reading_form" class="reading {{ row_class.next() }}"
-  action="javascript:add_reading()">
-  <div class="title"><input class="defaulted" id="title" value="Title"/></div>
-  <div class="details"><input class="defaulted" id="link" value="Link"/></div>
-  <input id="add_reading_button" type="submit" class="button"
-   value="Add Reading" />
-</form>
-
 {% endblock %}
-
-{% block buttons %}
-<span class="button">
- <a href="{{ url_for('logout') }}">Logout</a>
-</span>
-{% endblock %}
-
