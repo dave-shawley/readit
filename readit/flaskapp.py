@@ -26,6 +26,7 @@ Application API
 """
 
 import binascii
+import logging
 import os
 
 import flask
@@ -38,17 +39,20 @@ import readit.user
 class Application(flask.Flask):
     def __init__(self, config_envvar='APP_CONFIG'):
         super(Application, self).__init__(__package__)
-        self.DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
-        self.HOST = os.environ.get('HOST', '0.0.0.0')
-        self.PORT = int(os.environ.get('PORT', '5000'))
-        self.SECRET_KEY = os.urandom(24)
-        self.MONGO_URL = os.environ.get('MONGOURL', 'mongodb://localhost/readit')
-        self.config.from_object(self)
+        self.config['DEBUG'] = os.environ.get('DEBUG', 'False').lower() == 'true'
+        self.config['HOST'] = os.environ.get('HOST', '0.0.0.0')
+        self.config['PORT'] = int(os.environ.get('PORT', '5000'))
+        self.config['SECRET_KEY'] = os.urandom(24)
+        self.config['MONGO_URL'] = os.environ.get('MONGOURL',
+                'mongodb://localhost/readit')
         self.config.from_envvar(config_envvar, silent=True)
     def run(self, **kwds):
         args = kwds.copy()
-        args.setdefault('host', self.HOST)
-        args.setdefault('port', self.PORT)
+        args.setdefault('host', self.config['HOST'])
+        args.setdefault('port', self.config['PORT'])
+        args.setdefault('debug', self.config['DEBUG'])
+        if args['debug']:
+            self.logger.setLevel(logging.DEBUG)
         super(Application, self).run(**args)
 
 app = Application()
@@ -107,14 +111,14 @@ def openid_validated(response):
 @app.route('/readings')
 def fetch_reading_list():
     if flask.g.user is None:
-        return flask.redirect(flask.url_for('openid_login'))
+        return flask.redirect(flask.url_for('login'))
     return flask.render_template('list.html',
             read_list=flask.g.user.get_readings())
 
 @app.route('/readings', methods=['POST'])
 def add_reading():
     if flask.g.user is None:
-        return flask.redirect(flask.url_for('openid_login'))
+        return flask.redirect(flask.url_for('login'))
     data = flask.request.json or flask.request.data or flask.request.form
     if not data:
         return flask.Response(status=400)
