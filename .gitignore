@@ -14,3 +14,4 @@ heroku-client
 .env
 docs/_build
 *.egg-info
+app.cfg

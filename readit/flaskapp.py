@@ -64,8 +64,6 @@ def initialize_current_user():
         flask.g.user = readit.user.find(user_id=flask.session['user_id'])
         if flask.g.user is None:
             flask.session.pop('user_id', None)
-        else:
-            flask.flash(u'Logged in as ' + flask.g.user.open_id)
 
 @app.after_request
 def teardown_persistence(response):
@@ -95,10 +93,15 @@ def openid_validated(response):
     app.logger.debug('validated Open ID %s, looking up user', oid)
     user = readit.user.find(open_id=oid)
     if user is None:
-        app.logger.error('no user found for ' + oid)
-        return flask.abort(404)
+        app.logger.info('no user found for %s, creating a new one', oid)
+        user = readit.user.User()
+        user.open_id = oid
+        user.name = response.nickname or response.fullname or response.email
+        user.email = response.email
+        user.update()
     flask.g.user = user
     flask.session['user_id'] = user.id
+    flask.flash(u'You have been logged in')
     return flask.redirect(flask.url_for('fetch_reading_list'), code=303)
 
 @app.route('/readings')
@@ -107,6 +110,17 @@ def fetch_reading_list():
         return flask.redirect(flask.url_for('openid_login'))
     return flask.render_template('list.html',
             read_list=flask.g.user.get_readings())
+
+@app.route('/readings', methods=['POST'])
+def add_reading():
+    if flask.g.user is None:
+        return flask.redirect(flask.url_for('openid_login'))
+    data = flask.request.json or flask.request.data or flask.request.form
+    if not data:
+        return flask.Response(status=400)
+    doc = flask.g.user.add_reading(data['title'], data['link'])
+    doc['when'] = doc['when'].isoformat() + 'Z'
+    return flask.Response(response=flask.json.dumps(doc), mimetype='text/json')
 
 @app.route('/config')
 def dump_configuration():
