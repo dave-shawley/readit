@@ -1,6 +1,5 @@
-Flask==0.8
-Flask-OpenID>=1.0.1
-Jinja2==2.6
-Werkzeug==0.8.2
+# we need 0.9 which is not released yet
+-e git://github.com/mitsuhiko/flask.git@086348e2f2874fb701048d5e1390cfe674de1f70#egg=Flask-dev
+# we need patches made post 1.0.1 which have not been released
+-e git://github.com/mitsuhiko/flask-openid.git@bf38a7376ae85fb62cf19a16ea7ec38966bc7347#egg=Flask_OpenID-dev
 pymongo==2.1
-wsgiref==0.1.2

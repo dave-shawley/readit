@@ -1,0 +1,10 @@
+syntax: glob
+*.pyc
+.coverage
+*.egg-info
+.*.swp
+docs/_build/
+.env/
+README.html
+nosetests.xml
+reference/
