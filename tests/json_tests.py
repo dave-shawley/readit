@@ -1,0 +1,66 @@
+import datetime
+import pymongo.objectid
+
+from .testing import TestCase
+
+import readit
+import readit.json_support
+
+
+class JSONTests(TestCase):
+    def setUp(self):
+        self.encoder = readit.json_support.JSONEncoder()
+        self.decoder = readit.json_support.JSONDecoder()
+
+    def test_storable_support(self):
+        item = readit.StorableItem()
+        item.attr = 'value'
+        json_str = self.encoder.encode(item)
+        result = self.decoder.decode(json_str)
+        self.assertEquals({'attr': 'value'}, result)
+
+    def test_datetime_support(self):
+        ts = datetime.datetime.utcnow()
+        json_str = self.encoder.encode({'timestamp': ts})
+        value = self.decoder.decode(json_str)
+        self.assertEquals(ts.isoformat() + 'Z', value['timestamp'])
+
+    def test_basic_encode_decode(self):
+        objects = [
+                {'one': 1, 'two': 2},
+                [1, 2, 3],
+                'simple string',
+                u'unicode string',
+                42,
+                22.7
+                ]
+        for obj in objects:
+            json_str = self.encoder.encode(obj)
+            result = self.decoder.decode(json_str)
+            self.assertEquals(obj, result)
+
+    def test_encode_unknown_fails(self):
+        with self.assertRaises(TypeError):
+            self.encoder.encode(object())
+
+    def test_decode_unknown_is_passthru(self):
+        json_str = '{"unknown":{"__jsonclass__":"Unknown"}}'
+        result = self.decoder.decode(json_str)
+        self.assertEquals({'unknown': {'__jsonclass__': 'Unknown'}}, result)
+
+    def test_mongo_objectid_support(self):
+        oid = pymongo.objectid.ObjectId()
+        json_str = self.encoder.encode({'objectid': oid})
+        value = self.decoder.decode(json_str)
+        self.assertEquals(str(oid), value['objectid'])
+
+    def test_reading_support_with_uuid_based_id(self):
+        a_reading = readit.Reading(title='Title', link='Link')
+        json_str = self.encoder.encode(a_reading)
+        value = self.decoder.decode(json_str)
+        self.assertEquals(value['__class__'], 'readit.Reading')
+        self.assertEquals(a_reading.title, value['title'])
+        self.assertEquals(a_reading.link, value['link'])
+        self.assertEquals(a_reading._id, value['_id'])
+        self.assertEquals(a_reading.when.isoformat()+'Z', value['when'])
+

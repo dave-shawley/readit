@@ -1,0 +1,79 @@
+<!-- vim: set ts=2 sts=2 sw=2 et: -->
+{% extends "layout.html" %}
+{% block head %}
+  <script type="text/javascript"
+    src="/js/ext/jquery-ui-1.8.18.custom.min.js">
+    </script>
+  <script type="text/javascript">
+
+    $(document).ready(function() {
+      $(".current").show();
+      $("#google").click(function () {
+        loginWith("http://www.google.com/accounts/o8/id");
+      });
+      $("#myopenidlogin").click(function () {
+        loginWith("http://" + $("#myopeniduser").val() + ".myopenid.com/");
+      });
+      $("#showmyopenid").click(function () {
+        slideIn($("#myopenid"));
+      });
+      $("a.back").click(function () {
+        slideIn($("#main"));
+      });
+    });
+
+    function loginWith(openid_url) {
+      console.log("logging in with " + openid_url);
+      $("#openid").val(openid_url);
+      $("#loginfrm").submit();
+    }
+
+    function slideIn($this) {
+      $("#jqt > div:visible").hide("slide", {}, 100);
+      $this.show("slide");
+    }
+  </script>
+{% endblock %}
+
+{% block body %}
+
+<div id="main" class="current">
+  <div class="toolbar">
+    <h1>Login Methods</h1>
+  </div>
+  <ul class="rounded">
+    <li class="forward">
+      <a id="google" href="#">Google</a>
+    </li>
+    <li class="arrow" id="showmyopenid">
+      <a href="#myopenid">My Open ID</a>
+    </li>
+  </ul>
+</div>
+
+<div id="myopenid">
+  <div class="toolbar">
+    <h1>My Open ID</h1>
+    <a class="back button" href="#">Back</a>
+  </div>
+  <ul class="rounded">
+    <li>
+      <label for="myopeniduser">
+      <input id="myopeniduser" name="myopeniduser"
+        placeholder="user.name" autocorrect="no"><br>
+    </li>
+    <li class="forward">
+      <a id="myopenidlogin">Login</a>
+    </li>
+  </ul>
+</div>
+
+<form id="loginfrm" method="post" action="{{ url_for('login') }}"
+  style="display:none" rel="external">
+  <input type="text" name="openid" id="openid">
+  <input type="submit" name="login" value="Login">
+  <input type="hidden" name="next" value="{{ next }}">
+</form>
+
+
+{% endblock %}

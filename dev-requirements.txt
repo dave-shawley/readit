@@ -1,0 +1,7 @@
+Sphinx>=1.0
+sphinxcontrib-httpdomain
+coverage
+mock>=0.8
+nose
+pytest
+flake8

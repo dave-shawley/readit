@@ -2,142 +2,151 @@
 User related Functions & Classes
 ================================
 
-This module contains a handful of functions that are hooked into Flask
-and a single class (:py:class:`.User`) that acts as the programmatic
-interface.  A ``User`` object is a pretty simple CRUD wrapper over the
-persistence layer with *business logic* methods that manipulate the
-read item list associated with the user.
-
-Examples
---------
-
-A :py:class:`.User` instance is created without parameters so all of
-its properties are initially empty.
-
->>> u = User()
->>> u.id, u.open_id, u.name, u.email
-(None, None, None, None)
-
-All of the properties are simple read/write properties except for
-:py:attr:`.User.id` which is read-only (for obvious reasons).
-
->>> u.id = 'something'
-Traceback (most recent call last):
-...
-AttributeError: can't set attribute
->>> u.open_id = 'foo'
->>> u.name = u'Dave Shawley'
->>> u.email = 42
->>> u.id, u.open_id, u.name, u.email
-(None, 'foo', u'Dave Shawley', 42)
-
-It might be a little surprising that there is really no enforcement of
-type here, but `it is easier to ask for forgiveness than it is to get
-permission <http://en.wikipedia.org/wiki/Grace_Hopper#Anecdotes>`_.
-
-User API
---------
+The main export from this module is the :py:class:`.User` class.  The user is
+the core abstraction in this system.  It provides CRUD access to the list
+of read items as well as class methods to locate and :py:class:`.User`
+instances in the first place.
 
 """
-import flask
+import uuid
+
 import readit
 
 
-
-class User(object):
+class User(readit.StorableItem):
     """I represent a user that is registered in the system.
     
-    I am identified by a unique OpenID, have a few attributes like my
-    email address and name, and have a list of things that I have read.
-    The list of articles that I have read are available as
-    :py:class:`~readit.Reading` instances from my :py:meth:`get_readings`
-    method.
+    I am identified by a unique ID value that is assigned by the underlying
+    system when the user is created.  I have a few attributes of my own
+    as well.
+    
+    >>> u = User()
+    >>> u.session_key, u.open_id, u.display_name, u.user_id, u.email
+    (None, None, None, None, None)
+    
+    I also keep track of whether the user has been logged in to the system
+    or not.  In this abstraction, the instance is considered to be *logged
+    in* when a unique session key has been established and the :py:meth:`login`
+    method has been called.  The user is logged in until the :py:meth:`logout`
+    method is invoked.
+    
+    >>> u.logged_in
+    False
+    >>> class Details:
+    ...    identity_url = 'http://open.id.identity/url'
+    ...    fullname = "User's full name"
+    ...    email = 'email@somewhere.com'
+    ...
+    >>> u.login(Details)
+    >>> u.session_key is not None
+    True
+    >>> u.logged_in
+    True
+    >>> u.logout()
+    >>> u.logged_in
+    False
     """
-    def __init__(self):
-        self._user_dict = {}
+
+    _PERSIST = ['user_id', 'email', 'display_name']
+
+    def __init__(self, session_key=None):
+        super(User, self).__init__()
+        self.display_name = None
+        self.email = None
+        self.user_id = None
+        self._session_key = session_key
+        self._open_id = None
+        self._readings = set()
+
+    def login(self, details):
+        """Update fields based on a successful login event.
+        The user information is read from the fields of the ``details``
+        instance.  The ``details`` object is required to define the
+        following attributes:
+        
+          #. *identity_url*: this is used as the Open ID identity that is
+             available from the :py:attr:`open_id` property.
+          #. *email*: this is the email address associated with the
+             Open ID
+          #. *fullname*: this is the preferred display name
+          #. *nickname*: if fullname is not set, then this is used as the
+             display name
+        
+        The only attribute that is absolutely required to have a value is
+        ``identity_url``.  The other attributes can be safely set to
+        ``None``.
+        
+        >>> class SampleDetails:
+        ...    identity_url = 'http://open.id.identity/url'
+        ...    fullname, nickname, email = None, None, None
+        ...
+        >>> u = User()
+        >>> u.login(SampleDetails)
+        >>> u.open_id
+        'http://open.id.identity/url'
+        >>> u.display_name
+        'http://open.id.identity/url'
+        >>> u.email is None
+        True
+        
+        The :py:attr:`display_name` attribute is derived from the three
+        remaining fields in the order specified above.  The first one that
+        is not ``None`` wins.
+        
+        >>> SampleDetails.email = 'daveshawley@gmail.com'
+        >>> u.login(SampleDetails)
+        >>> u.display_name
+        'daveshawley@gmail.com'
+        >>> SampleDetails.nickname = 'dave.shawley'
+        >>> u.login(SampleDetails)
+        >>> u.display_name
+        'dave.shawley'
+        >>> SampleDetails.fullname = 'Dave Shawley'
+        >>> u.login(SampleDetails)
+        >>> u.display_name
+        'Dave Shawley'
+        """
+        if self._session_key is None:
+            self._session_key = str(uuid.uuid4())
+        self._open_id = details.identity_url
+        self.display_name = (details.fullname or details.nickname or
+                details.email or details.identity_url)
+        self.email = details.email
+
+    def logout(self):
+        """Reset my fields and ensure that future reads of the
+        :py:attr:`logged_in` property return ``False``.
+        """
+        self.display_name = None
+        self.email = None
+        self._open_id = None
+        self._session_key = None
 
     @property
-    def id(self):
-        """The unique identifier assigned to me by the persistence layer."""
-        return self._user_dict.get('_id')
+    def readings(self):
+        """Returns the list of things that this user has read."""
+        return list(self._readings)
 
-    def get_open_id(self):
-        return self._user_dict.get('open_id')
-    def set_open_id(self, open_id):
-        self._user_dict['open_id'] = open_id
-    open_id = property(get_open_id, set_open_id,
-            doc="""My OpenID as a string.""")
+    def add_reading(self, reading):
+        """Appends an item to the list of things that this user has read."""
+        self._readings.add(reading)
 
-    def get_name(self):
-        return self._user_dict.get('name')
-    def set_name(self, name):
-        self._user_dict['name'] = name
-    name = property(get_name, set_name,
-            doc="""My display name.  This is either the full name from
-                   the OpenID layer or the nickname.""")
+    def remove_reading(self, reading):
+        """Removes a reading from the user's list."""
+        self._readings.remove(reading)
 
-    def get_email(self):
-        return self._user_dict.get('email')
-    def set_email(self, email):
-        self._user_dict['email'] = email
-    email = property(get_email, set_email,
-            doc="""My email address or ``None``""")
+    @property
+    def open_id(self):
+        """The URL that is my identifying property.  This value is ``None``
+        unless the user is logged in."""
+        return self._open_id
 
-    def update(self):
-        """Persist myself.
-        
-        Once I am persistent, you can retrieve me by calling :py:meth:`.find`
-        with either my :py:attr:`.id` or :py:attr:`.open_id`.  If this is the
-        first time that I am stored, then a new :py:attr:`id` attribute will
-        be assigned."""
-        flask.g.db.save_user(self._user_dict)
+    @property
+    def session_key(self):
+        return self._session_key
 
-    def get_readings(self):
-        """Find my readings.
-        
-        :rtype: list of :py:class:`~readit.Reading` instances
-        """
-        readings = []
-        for doc in flask.g.db.find_readings(user_id=self.id):
-            readit.app.logger.debug('found %s', str(doc))
-            readings.append(readit.Reading.from_dict(doc))
-        return readings
-
-    def remove_reading(self, reading_id):
-        """Remove a specific reading.
-        
-        :param str reading_id: the object ID of the reading
-        """
-        flask.g.db.remove_reading(self.id, reading_id)
-
-    def add_reading(self, title, link):
-        return flask.g.db.add_reading(self.id, title, link)
-
-    @staticmethod
-    def find(open_id=None, user_id=None):
-        """Lookup a user by either OpenID or user ID.
-        
-        :param str open_id: OpenID.
-        :param str user_id: Internal user identifier.
-        :rtype: :py:class:`.User`
-        :raises: :py:class:`readit.ParameterError` if neither parameter is
-                 provided
-        """
-        user = None
-        user_dict = flask.g.db.find_user(open_id, user_id)
-        if user_dict is None:
-            readit.app.logger.debug('user not found for %s',
-                    str((open_id, user_id)))
-        else:
-            user = User()
-            user._user_dict = user_dict.copy()
-        return user
-
-    def __str__(self):
-        return '<{0}.{1} id={2} openid={3}>'.format(self.__module__,
-                self.__class__.__name__, self.id, self.open_id)
-
-
-def find(**kwds):
-    return User.find(**kwds)
+    @property
+    def logged_in(self):
+        """Is the user currently logged in?"""
+        return self._session_key is not None
 

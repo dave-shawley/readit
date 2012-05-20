@@ -1,46 +1,127 @@
-<!-- vim: set ts=2 sw=2 sts=2 et: -->
 {% extends "layout.html" %}
+<!-- vim: set ts=2 sts=2 sw=2 et indentexpr=: -->
+{% block head %}
+  <script type="text/javascript"
+    src="/js/ext/jqtouch/jqtouch.js">
+    </script>
+  <script type="text/javascript"
+    src="/js/ext/jqtouch/jqtouch-jquery.js">
+    </script>
+  <script type="text/javascript"
+    src="/js/stdlib.js">
+    </script>
+  <script type="text/javascript"
+    src="/js/readit.js">
+    </script>
+  <script type="text/javascript">
+    $(document).ready(function() {
+      document.jqt = new $.jQTouch({});
+      document.readit = readit({
+        debug: true,
+        loginURL: "{{ url_for('login') }}",
+        actions: {
+        {% for name in actions %}
+          "{{ name }}": {
+              method: "{{ actions[name].method }}",
+              url: "{{ actions[name].url }}" },
+        {% endfor %}
+        }
+      });
+      document.readit.fetchReadings();
 
-{% block prologue %}
+      $("#addbutton").click(function (event) {
+        var $reading = $("#readingform");
+        event.preventDefault();
+        document.readit.addReading(
+          document.readit.createReading({
+            title: $reading.find("input[name=title]").val(),
+            link: $reading.find("input[name=link]").val()
+          }));
+      });
 
-<script
-  type="text/javascript"
-  src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.js">
+      $("#logoutbutton").click(function (event) {
+        var r = document.readit;
+        if (r.actions["logout"]) {
+          event.preventDefault();
+          $.ajax({
+            url: r.actions["logout"].url,
+            type: r.actions["logout"].method,
+            success: function (data) {
+              document.location.replace("/login");
+            }
+          });
+        }
+      });
+
+      $("#refreshbutton").click(function (event) {
+        event.preventDefault();
+        window.location.reload(true);
+      });
+
+      var $source = $("#readinginfo span.title");
+      $("#readinginfo .patch").css({
+        "color": $source.css("color"),
+        "width": "auto",
+        "float": "none",
+        "text-align": "left"
+      });
+    });
   </script>
-<script
-  type="text/javascript"
-  src="{{ url_for('static', filename='jqtouch/jqtouch.js') }}">
-  </script>
-<script type="text/javascript">
-$.jQTouch({ });
-$(document).ready(function() {
-  $('.reading').click(function(arg) {
-    var $this = $(this);
-    console.log($this.attr('link'));
-    document.location = $this.attr('link');
-  });
-});
-</script>
 {% endblock %}
 
 {% block body %}
-<div id="readinglist" class="active">
+<div id="list" class="active">
   <div class="toolbar">
-    <h1>You Read These</h1>
-    <a href="{{ url_for('logout') }}" class="button">X</a>
+    <h1>You read these</h1>
+    <a id="logoutbutton" href="#" class="button">Logout</a>
   </div>
-  <ul>
-  {% set row_class = cycler('odd', 'even') %}
-  {% for reading in read_list %}
-    <li class="arrow reading {{ row_class.next() }}"
-      link="{{ reading.link }}" id="{{ reading.id }}">
-      <span><a href="{{ reading.link }}">{{ reading.title }}</a></span>
-      <div class="largescreen">
-        <span rel="link">{{ reading.link }}</span> read on
-        <span rel="when">{{ reading.when.strftime("%a, %d %b %Y %H:%M:%S GMT") }}</span>
-      </div>
+
+  <ul class="rounded scroll" id="readinglist">
+    <li id="reading" class="arrow template">
+      <a href="#readinginfo">
+        <span class="title"></span>
+      </a>
     </li>
-  {% endfor %}
+  </ul>
+  <a class="whiteButton" href="#addreading">Add a Reading</a>
+  <a class="whiteButton" id="refreshbutton" href="#">Refresh</a>
+</div>
+
+<div id="readinginfo">
+  <div class="toolbar">
+    <a href="#" class="back button">Back</a>
+    <h1>Reading</h1>
+    <a action="remove" href="#" class="remove button">-</a>
+  </div>
+  <ul class="rounded">
+    <li>
+      <span style="color:#262626" class="title"></span>
+    </li>
+    <li>
+      <small class="patch">Added on <span class="when"></span></small>
+    </li>
+    <li class="arrow">
+      <a href="" class="link"><small class="url patch"></small></a>
+    </li>
   </ul>
 </div>
+
+<div id="addreading">
+  <div class="toolbar">
+    <a href="#" class="back button">Back</a>
+    <h1>Add Reading</h1>
+  </div>
+  <form id="readingform">
+    <ul class="edit rounded">
+      <li><input name="title" type="text" placeholder="Title"/></li>
+      <li><input name="link" type="url" placeholder="http://link.to.item"/></li>
+    </ul>
+    <ul class="individual">
+      <li><a href="#list" class="goback">Cancel</a></li>
+      <li><a id="addbutton" href="#">Add</a></li>
+    </ul>
+  </form>
+</div>
+
 {% endblock %}
+

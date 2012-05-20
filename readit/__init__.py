@@ -1,22 +1,14 @@
-import flask
+# order is important here
+from .helpers import LinkMap
+from .reading import Reading
+from .storage import MoreThanOneResultError, StorableItem, Storage
+from .user import User
 
-# these are are API level exports
-from flaskapp import app
-from reading import Reading
-from persistence import Persistence
-from user import User
-
-
-class ParameterError(Exception):
-    """An incorrect parameter was specified."""
-    pass
-
-class NotFoundError(Exception):
-    """The target was not found."""
-    def __init__(self, target):
-        self.target = target
+# flaskapp import required to be last since it depends on
+# other readit exports
+from .flaskapp import app, Application
 
 
-def run():
-    app.run()
+__all__ = ['app', 'Application', 'LinkMap', 'MoreThanOneResultError',
+        'Reading', 'StorableItem', 'Storage', 'User']
 

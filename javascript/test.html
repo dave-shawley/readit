@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Read It JavaScript Unit Tests</title>
+		<link rel=stylesheet href="test/ext/qunit.css" type="text/css">
+		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.js"></script>
+		<script type="text/javascript" src="stdlib.js"></script>
+		<script type="text/javascript" src="readit.js"></script>
+
+		<script type="text/javascript" src="test/lib/ajaxmock.js"></script>
+		<script type="text/javascript" src="test/ext/qunit.js"></script>
+		<script type="text/javascript" src="test/lib/startup.js"></script>
+		<script type="text/javascript" src="test/lib/helpers.js"></script>
+
+		<script type="text/javascript" src="test/ajax-tests.js"></script>
+		<script type="text/javascript" src="test/object-tests.js"></script>
+		<script type="text/javascript" src="test/ui-tests.js"></script>
+		<script type="text/javascript" src="test/stdlib-tests.js"></script>
+	</head>
+	<body>
+		<h1 id="qunit-header"></h1>
+		<h1 id="qunit-banner"></h1>
+		<h1 id="qunit-userAgent"></h1>
+		<h1 id="qunit-tests"></h1>
+
+		<div id="qunit-fixture" style="display:none">
+
+			<div id="readinglist">
+				<ul>
+					<li id="reading" class="reading template">
+						<p class="title"></p>
+						<p class="when"></p>
+						<a href="#" class="link url"></a>
+					</li>
+				</ul>
+			</div>
+
+			<div id="parameterized-list" style="display:none">
+				<ul id="p-reading-info">
+					<li id="p-reading" class="reading p-template">
+						<p class="p-title"></p>
+						<p class="p-when"></p>
+						<a class="p-link" href="" id="p-url"></a>
+					</li>
+				</ul>
+				<div id="parameterized-message">
+					<p id="p-status"></p>
+					<p></p>
+					<p class="p-error"></p>
+				</div>
+			</div>
+
+			<div id="message">
+				<p class="status"></p>
+				<p class="phrase"></p>
+				<p class="error"></p>
+			</div>
+
+			<div id="readinginfo">
+				<p class="title"></p>
+				<p>Created on <span class="when"></span></p>
+				<p><a href="#" class="link"><span class="url"/></a></p>
+			</div>
+
+		</div>
+
+	</body>
+</html>

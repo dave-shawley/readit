@@ -1,166 +1,285 @@
 """
-Flask Application Hooks
-=======================
+This module contains the Flask-specific portion of the application.  This
+isn't meant to be a replaceable interface.  Instead, it is a convenient way
+to isolate the Flasky stuff into one place.
 
-This module contains most of the Flask application.  This is where you will
-find the various view functions and other flasky hooks.
-
-Flask Usage
------------
-
-.. py:data:: flask.g.db
-
-This is set to an instance of :py:class:`~readit.persistence.Persistence`
-It is populated using a :py:meth:`flask.Flask.before_request` hook.  The
-connection to the backend is lazily created in the implementation.  Another
-hook registered with :py:meth:`flask.Flask.after_request` will tear down the
-connection if one was created.
+Flask Global Usage
+------------------
 
 .. py:data:: flask.g.user
 
-The :py:class:`~readit.User` instance for the currently active (e.g., *logged
-in*) identity or ``None``.  This is managed by
-:py:func:`initialize_current_user`, :py:func:`openid_validated`,
-and :py:func:`logout`.
+   A new instance of :py:class:`~readit.User` is stored in ``flask.g.user``
+   when a new request comes in.  If the session contains our data, then the
+   user is automagically logged in.  Otherwise, ``flask.g.user`` will be in
+   the *logged out* state.
 
-.. py:data:: flask.session['user_id']
+.. py:data:: flask.session
 
-The internal (DB) ID for the currently active identity.  This is managed by
-:py:func:`initialize_current_user`, :py:func:`openid_validated`, and
-:py:func:`logout`.
+   A generated session key is placed into ``flask.session["session_key"]``
+   when the user logs in.  The session key is used as a URL path parameter
+   to refer to manipulate the user through the session.
 
-Application API
----------------
+Read It Flask Application
+-------------------------
+
 """
-
-import binascii
-import logging
+import datetime
+import functools
 import os
 
 import flask
 import flaskext.openid
+import werkzeug.exceptions
 
-import readit.persistence
-import readit.user
+import readit
+import readit.json_support
 
 
-class Application(flask.Flask):
-    """
-    I am the core Flask application.
+class Application(flask.Flask, readit.LinkMap):
+    """I extend :py:class:`flask.Flask` to add Open ID tracking and use
+    :py:class:`LinkMap` to provide a list of actions.
     
-    I don't provide much beyond what is already provided by
-    :py:class:`flask.Flask`.  Just some simple configuration niceties.
+    The original goal of this class was to implement all of the user
+    management and other *business logic* outside of the Flask view
+    functions.
     """
-    def __init__(self, config_envvar='APP_CONFIG'):
-        super(Application, self).__init__(__package__)
-        self.config['DEBUG'] = (os.environ.get('DEBUG', 'False').lower() 
-                in [ 'true', '1', 'yes', 'y' ])
-        self.config['HOST'] = os.environ.get('HOST', '0.0.0.0')
-        self.config['PORT'] = int(os.environ.get('PORT', '5000'))
+
+    JAVASCRIPT_DEBUG_FILE_LIFETIME = 60
+
+    def __init__(self):
+        flask.Flask.__init__(self, __package__)
+        readit.LinkMap.__init__(self)
         self.config['SECRET_KEY'] = os.urandom(24)
-        self.config['MONGO_URL'] = os.environ.get('MONGOURL',
-                'mongodb://localhost/readit')
-        self.config.from_envvar(config_envvar, silent=True)
-    def run(self, **kwds):
-        args = kwds.copy()
+        self.config.setdefault('SESSION_LIFETIME', 5 * 60)
+        self.config.setdefault('HOST', os.environ.get('HOST', '127.0.0.1'))
+        self.config.setdefault('PORT', os.environ.get('PORT', '5000'))
+        flag = os.environ.get('DEBUG', None)
+        if flag is not None:
+            self.config['DEBUG'] = flag.lower() in ['true', 't', 'yes', '1']
+        self.oid = flaskext.openid.OpenID(self)
+        self.oid.after_login(self._login_succeeded)
+        self.oid.errorhandler(self._report_openid_error)
+
+    @property
+    def openid(self):
+        """The :py:class:`flaskext.openid.OpenID` instance that is bound to
+        the application.  Use this to establish Open ID login handlers."""
+        return self.oid
+
+    # @openid.after_login
+    def _login_succeeded(self, response):
+        result = flask.g.db.retrieve_one('users', response.email)
+        if result:
+            flask.g.user.login(response)
+            flask.g.user.user_id = result['user_id']
+            flask.session['session_key'] = flask.g.user.session_key
+            flask.session['user_id'] = result['user_id']
+            self.logger.debug('login succeeded for %s => %s/%s/%s',
+                    flask.session['session_key'], flask.g.user.user_id,
+                    flask.g.user.open_id, flask.g.user.email)
+            next = flask.request.args.get('next') or self.oid.get_next_url()
+            self.logger.debug('redirecting to %s', next)
+            return flask.redirect(next)
+        self.logger.error('failed to find user for identity %s',
+                response.identity_url)
+        return flask.Response(status=404)
+
+    # @openid.errorhandler
+    def _report_openid_error(self, message):
+        self.logger.error('Open ID Error [%s]', message, exc_info=1)
+        raise werkzeug.exceptions.InternalServerError('Open ID Failure')
+
+    def logout(self):
+        """Log the current user out of the application.  Calling this method
+        will invokes the :py:meth:`~readit.User.logout` method on
+        :py:data:`flask.g.user` and removing data that was stored in
+        :py:data:`flask.session`."""
+        flask.session.pop('user_id', None)
+        flask.session.pop('session_key', None)
+        flask.g.user.logout()
+
+    # This requires Flask >= 0.9
+    def get_send_file_max_age(self, filename):
+        if self.debug:
+            if filename.lower().endswith('.js'):
+                return self.JAVASCRIPT_DEBUG_FILE_LIFETIME
+        return super(Application, self).get_send_file_max_age(filename)
+
+    def run(self, **args):
         args.setdefault('host', self.config['HOST'])
-        args.setdefault('port', self.config['PORT'])
+        args.setdefault('port', int(self.config['PORT']))
         args.setdefault('debug', self.config['DEBUG'])
-        if args['debug']:
-            self.logger.setLevel(logging.DEBUG)
-        super(Application, self).run(**args)
+        flask.Flask.run(self, **args)
+
+    def jsonify(self, obj):
+        """JSONify an object using the
+        :py:class:`readit.json_support.JSONEncoder` class.
+        """
+        encoder = readit.json_support.JSONEncoder()
+        return self.response_class(encoder.encode(obj),
+                mimetype='application/json')
+
+    def process_response(self, response):
+        """Slight customization of response processing.
+        
+        :param response: :py:class:`flask.Response` instance
+        :returns: either ``response`` or a new :py:class:`flask.Response`
+            instance containing a JSON redirect.
+        
+        If :py:class:`flask.request` is an AJAX request and ``response`` is a
+        HTTP redirect response, then the response is rewritten as a HTTP OK
+        containing a JSON object with a single attribute named ``redirect_to``
+        and the value of the ``Location`` header from the response::
+            
+            HTTP/1.1 303 See Other
+            Location: http://other.server.com/location
+        
+        becomes::
+            
+            HTTP/1.1 200 OK
+            Content-Type: application/json
+            Content-Length: 52
+            
+            {"redirect_to":"http://other.server.com/location"}
+        
+        This hack is necessary to work around a deficiency in the way that
+        XMLHTTPRequest processes redirect responses.
+        """
+        if flask.request.is_xhr and readit.helpers.is_redirect(response):
+            location = response.headers['location']
+            app.logger.debug('transforming redirect "%s" into JSON', location)
+            response = self.jsonify({'redirect_to': location})
+        return super(Application, self).process_response(response)
 
 app = Application()
-open_id = flaskext.openid.OpenID(app)
+ 
+
+def verify_session(func):
+    """Decorator that verifies the authenticity of the session key.
+    
+    Use this to decorate a flask view function that takes the session key
+    as its only argument.  If the session key doesn't match the key that
+    is stored in the signed session or it doesn't match the user's session
+    key, then a 409 is raised.  If there is no key in the session, then we
+    obviously are not logged in, so a redirect to the login page is
+    returned.
+    """
+    @functools.wraps(func)
+    def wrapper(session_key):
+        if 'session_key' not in flask.session:
+            #  303 is required since we may be wrapping a non-GET request
+            return flask.redirect(flask.url_for('login'), code=303)
+        if session_key != flask.session['session_key']:
+            raise werkzeug.exceptions.Conflict('session key mismatch')
+        return func(session_key)
+    return wrapper
+
 
 @app.before_request
-def initialize_current_user():
-    """Called before a request to establish :py:data:`flask.g.user`
-    based on the ``user_id`` session attribute and set up the persistence
-    layer."""
-    flask.g.db = readit.persistence.Persistence()
-    flask.g.user = None
-    if 'user_id' in flask.session:
-        flask.g.user = readit.user.find(user_id=flask.session['user_id'])
-        if flask.g.user is None:
-            flask.session.pop('user_id', None)
+def initialize_user():
+    """Make sure that ``flask.g.user`` is initialized to an instance
+    of :py:class:`readit.User`."""
+    flask.g.user = readit.User(flask.session.get('session_key', None))
+    flask.g.user.user_id = flask.session.get('user_id', None)
 
-@app.after_request
-def teardown_persistence(response):
-    """Called after a request to teardown the persistence layer."""
-    if flask.g.db is not None:
-        flask.g.db.close()
-        flask.g.db = None
-    return response
 
-@app.route('/', methods=['GET', 'POST'])
-@open_id.loginhandler
+@app.before_request
+def setup_storage():
+    if not hasattr(flask.g, 'db'):
+        import readit.mongo
+        flask.g.db = readit.mongo.Storage()
+
+
+@app.route('/')
+def root():
+    """Application entry point.  This will redirect to either a login page
+    or the list of readings for the currently logged in user."""
+    if not flask.g.user.logged_in:
+        return flask.redirect(flask.url_for('login'))
+    return flask.redirect(flask.url_for('reading_list',
+        session_key=flask.g.user.session_key))
+
+
+@app.route('/login', methods=['GET', 'POST'])
+@app.advertise('start-login', 'GET')
+@app.openid.loginhandler
 def login():
-    """Perform the Open ID login"""
-    if flask.g.user is not None:
-        app.logger.debug('user %s is logged in', flask.g.user)
-        return flask.redirect(flask.url_for('fetch_reading_list'), code=303)
+    """Root of the login process.  A :http:method:`GET` will return the
+    login page.  However, if the user is already logged in, then this will
+    simply redirect to the reading list."""
+    next_arg = flask.request.args.get('next')
+    if flask.g.user.logged_in:
+        next_arg = next_arg or app.openid.get_next_url()
+        app.logger.debug('redirecting to %s', next_arg)
+        return flask.redirect(next_arg)
     if flask.request.method == 'POST':
-        oid = flask.request.form.get('openid')
-        if oid:
-            app.logger.debug('processing login for %s', oid)
-            requested = [ 'email', 'fullname', 'nickname' ]
-            return open_id.try_login(oid, ask_for=requested)
-    return flask.render_template('openid-login.html',
-            next=open_id.get_next_url(), error=open_id.fetch_error())
+        openid = flask.request.form.get('openid')
+        if openid:
+            app.logger.debug('trying openid %s', openid)
+            return app.openid.try_login(openid,
+                    ask_for=['email', 'fullname', 'nickname'])
+        raise werkzeug.exceptions.InternalServerError(
+                'POST missing openid parameter')
+    next_arg = next_arg or flask.url_for('root')
+    return flask.render_template('login.html', next=next_arg)
 
-@open_id.after_login
-def openid_validated(response):
-    """Process a successful Open ID login"""
-    oid = response.identity_url
-    app.logger.debug('validated Open ID %s, looking up user', oid)
-    user = readit.user.find(open_id=oid)
-    if user is None:
-        app.logger.info('no user found for %s, creating a new one', oid)
-        user = readit.user.User()
-        user.open_id = oid
-        user.name = response.nickname or response.fullname or response.email
-        user.email = response.email
-        user.update()
-    flask.g.user = user
-    flask.session['user_id'] = user.id
-    flask.flash(u'You have been logged in')
-    return flask.redirect(flask.url_for('fetch_reading_list'), code=303)
 
-@app.route('/readings')
-def fetch_reading_list():
-    """Retrieve a list of readings for display."""
-    if flask.g.user is None:
-        return flask.redirect(flask.url_for('login'))
-    return flask.render_template('list.html',
-            read_list=flask.g.user.get_readings())
+@app.route('/favicon.ico')
+def favicon():
+    return app.send_static_file('favicon.ico')
 
-@app.route('/readings', methods=['POST'])
-def add_reading():
-    """Add a new reading, returns the JSON representation of the reading."""
-    if flask.g.user is None:
-        return flask.redirect(flask.url_for('login'))
-    data = flask.request.json or flask.request.data or flask.request.form
-    if not data:
-        return flask.Response(status=400)
-    doc = flask.g.user.add_reading(data['title'], data['link'])
-    doc['when'] = doc['when'].isoformat() + 'Z'
-    return flask.Response(response=flask.json.dumps(doc), mimetype='text/json')
 
-@app.route('/config')
-def dump_configuration():
-    if not app.config['DEBUG']:
-        flask.abort(403)
-    cfg = os.environ.copy()
-    if 'SECRET_KEY' in cfg:
-        cfg['SECRET_KEY'] = binascii.hexlify(cfg['SECRET_KEY'])
-    return flask.render_template('config.html', environ=os.environ, config=cfg)
+@app.route('/<session_key>', methods=['DELETE'])
+@app.advertise('logout', 'DELETE')
+@verify_session
+def logout(session_key):
+    """Log a session out of the system."""
+    app.logout()
+    return app.jsonify(app.links)
 
-@app.route('/logout')
-def logout():
-    """Clear out the Open ID session attributes."""
-    flask.session.pop('user_id', None)
-    flask.g.user = None
-    flask.flash(u'You have been logged out.')
-    return flask.redirect(flask.url_for('login'))
+
+@app.route('/<session_key>/links')
+@app.advertise('get-links', 'GET')
+@verify_session
+def get_links(session_key):
+    """Return a list of links for this session."""
+    return app.jsonify(app.links)
+
+
+@app.route('/<session_key>/readings')
+@app.advertise('get-readings', 'GET')
+@verify_session
+def reading_list(session_key):
+    """Return the list of readings for this session."""
+    if readit.helpers.wants_json(flask.request):
+        app.logger.debug('retrieving data from %s for %s',
+                flask.g.db, flask.g.user.user_id)
+        data = flask.g.db.retrieve('readings', flask.g.user.user_id,
+                factory=readit.Reading)
+        return app.jsonify({'actions': app.links, 'readings': data})
+    return flask.render_template('list.html', actions=app.links)
+
+
+@app.route('/<session_key>/readings', methods=['POST'])
+@app.advertise('add-reading', 'POST')
+@verify_session
+def add_reading(session_key):
+    data = flask.request.json or flask.request.form
+    try:
+        app.logger.debug('saving reading to %s for %s',
+                flask.g.db, flask.g.user.user_id)
+        reading = readit.Reading(title=data['title'], link=data['link'],
+                when=data.get('when', datetime.datetime.utcnow()))
+        flask.g.db.save('readings', flask.g.user.user_id, reading)
+        return app.jsonify({'actions': app.links, 'new_reading': reading})
+    except KeyError, exc:
+        raise werkzeug.exceptions.BadRequest(
+                '{0} is a required field'.format(exc))
+
+
+@app.route('/<session_key>/readings/<reading_id>', methods=['DELETE'])
+def remove_reading(session_key, reading_id):
+    flask.g.db.remove('readings', flask.g.user.user_id, _id=reading_id)
+    return flask.Response(status=204)
+
 

@@ -1,175 +1,94 @@
-"""
-Reading related Classes
-=======================
-
-"""
 import datetime
-import flask
-import readit
+import uuid
+
+from .storage import StorableItem
 
 
-class StringAttribute(object):
-    """Attribute that coerces everything into a unicode value.
+class Reading(StorableItem):
+    """I represent something that a :py:class:`~readit.User` has read.
     
-    >>> s = StringAttribute()
-    >>> s.value is None
+    A reading is little more than a display name, a link, and a timestamp.
+    Equality is based on the name and link and the properties are all simple
+    properties with full read+write access.
+    
+    >>> r = Reading('<Title>', '<Link>')
+    >>> r.title, r.link
+    ('<Title>', '<Link>')
+    >>> r == Reading('<Title>', '<Link>')
     True
-    >>> s.value = 1
-    >>> s.value
-    u'1'
-    >>> s.value = 'one'
-    >>> s.value
-    u'one'
-    >>> str(s)
-    'one'
-    """
-    def __init__(self, value=None):
-        self._value = None
-        self.set_value(value)
-    def get_value(self):
-        return self._value
-    def set_value(self, value):
-        if value is None:
-            self._value = None
-        else:
-            self._value = unicode(value)
-    value = property(get_value, set_value)
-    def __str__(self):
-        return str(self._value)
-    def __unicode__(self):
-        return unicode(self._value)
-
-class DateTimeAttribute(object):
-    """An attribute that requires a datetime value.
     
-    >>> d = DateTimeAttribute()
-    >>> d.value is None
-    True
-    >>> d.value = datetime.datetime(2012, 1, 1, 0, 0, 0)
-    >>> str(d)
-    '2012-01-01T00:00:00'
-    >>> unicode(d)
-    u'2012-01-01T00:00:00'
-    >>> d.value
-    datetime.datetime(2012, 1, 1, 0, 0)
-    >>> d.value = '2012-01-01'
-    Traceback (most recent call last):
-    ...
-    TypeError: value is required to be a datetime instance
-    """
-    def __init__(self, value=None):
-        self._value = None
-        self.set_value(value)
-    def get_value(self):
-        return self._value
-    def set_value(self, value):
-        if value is None:
-            self._value = None
-        elif isinstance(value, DateTimeAttribute):
-            self._value = value._value
-        elif isinstance(value, datetime.datetime):
-            self._value = value
-        else:
-            raise TypeError('value is required to be a datetime instance')
-    value = property(get_value, set_value)
-    @staticmethod
-    def now():
-        return DateTimeAttribute(datetime.datetime.now())
-    def __str__(self):
-        if self._value is None:
-            return str(None)
-        return self._value.isoformat()
-    def __unicode__(self):
-        return unicode(str(self))
-
-
-class Reading(object):
-    """I represent something that has been read.
+    The other interesting property of an item that the user has read is
+    when it was read.  This is tracked by my ``when`` attribute which is
+    a :py:class:`~datetime.datetime` instance but can specified as a
+    ISO-8601 encoded string as well.
     
-    The Read It application tracks blog posts, articles, or web pages that
-    have been read and when they were read.  This isn't really the same as
-    a bookmarking service since bookmarks are usually something *to be read*
-    or reference material.
-    
-    A ``Reading`` instance includes little more than the minimal information
-    needed for the application.  By default, all of the attributes are set
-    to ``None``.
-    
-    >>> r = Reading()
-    >>> r.id, r.title, r.link, r.when
-    (None, None, None, None)
-    
-    The attributes are simple data attributes.  The :py:attr:`title` and
-    :py:attr:`link` attributes are strings and the :py:attr:`when` attribute
-    is a :py:class:`~datetime.datetime` instance.
-    
-    >>> r.title = 1
-    >>> r.title
-    u'1'
-    >>> r.link = u'some link'
-    >>> r.link
-    u'some link'
-    >>> r.when = '11/11/2011'
-    Traceback (most recent call last):
-    ...
-    TypeError: value is required to be a datetime instance
-    >>> r.when = datetime.datetime(2011, 11, 11, 0, 0, 0)
+    >>> when = '2012-03-24T11:56:48Z'
+    >>> r = Reading('<Title>', '<Link>', when)
     >>> r.when
-    datetime.datetime(2011, 11, 11, 0, 0)
-    >>> str(r.when)
-    '2011-11-11 00:00:00'
+    datetime.datetime(2012, 3, 24, 11, 56, 48)
+    >>> when = datetime.datetime.utcnow()
+    >>> r = Reading('<Title>', '<Link>', when)
+    >>> r.when == when
+    True
     
-    The :py:attr:`id` attribute is the unique identifier from the persistence
-    layer.  It should only be created by the persistence layer and should be
-    undefined if this object has never been persisted.
+    I also act as a simple value type that is comparable for equality and
+    hashable.  This property allows me to be safely inserted into lists and
+    sets.
     
-    Reading instances can also be initialized by passing keyword arguments
-    into the initializer.
+    >>> r1 = Reading('<Title>', '<Link>')
+    >>> a_set = set()
+    >>> a_set.add(r1)
+    >>> len(a_set)
+    1
+    >>> a_set.add(r1)
+    >>> len(a_set)
+    1
+    >>> a_set.remove(Reading('<Title>', '<Link>'))
+    >>> len(a_set)
+    0
     
-    >>> r = Reading(title='a title', link='http://foo.com')
-    >>> r.title, r.link, r.when
-    (u'a title', u'http://foo.com', None)
+    The final interesting attribute is that I have a unique identifying
+    string that you can access with the :py:attr:`~readit.Reading.id`
+    attribute.  If you do not assign one, I will gladly create a GUID-based
+    identifier.  You can overwrite the identifier freely and it does not
+    factor into my view of equality.
+    
+    >>> r2 = Reading('<Title>', '<Link>')
+    >>> r1 == r2 and r1._id != r2._id
+    True
+    >>> r1._id = r2._id
+    >>> r1 == r2 and r1._id == r2._id
+    True
     """
-    def __init__(self, title=None, link=None, when=None):
-        self._id = None
-        self._title = StringAttribute(title)
-        self._link = StringAttribute(link)
-        self._when = DateTimeAttribute(when)
-    @classmethod
-    def from_dict(cls, a_dict):
-        """Creates a new instance from a dictionary.
-        
-        The dictionary is required to contain entries for the :py:attr:`title`,
-        :py:attr:`link`, and :py:attr:`when` attributes.  If it does not, then
-        a :py:class:`KeyError` will be raised.
 
-        >>> inst = Reading.from_dict({})
-        Traceback (most recent call last):
-        ...
-        KeyError: 'title'
-        """
-        an_instance = cls()
-        an_instance._id = a_dict.get('_id')
-        an_instance.title = a_dict['title']
-        an_instance.link = a_dict['link']
-        an_instance.when = a_dict['when']
-        return an_instance
+    _PERSIST = ['_id', 'title', 'link', 'when']
+
+    def __init__(self, title=None, link=None, when=None):
+        super(Reading, self).__init__()
+        self.title = title
+        self.link = link
+        self.when = when or datetime.datetime.utcnow()
+        self._id = str(uuid.uuid4())
+
     @property
-    def id(self):
-        return self._id
-    def _get_title(self):
-        return self._title.value
-    def _set_title(self, value):
-        self._title.value = value
-    def _get_link(self):
-        return self._link.value
-    def _set_link(self, value):
-        self._link.value = value
-    def _get_when(self):
-        return self._when.value
-    def _set_when(self, value):
-        self._when.value = value
-    title = property(_get_title, _set_title)
-    link = property(_get_link, _set_link)
-    when = property(_get_when, _set_when)
+    def when(self):
+        return self._when
+
+    @when.setter
+    def when(self, value):
+        if isinstance(value, (str, unicode)):
+            dt_string, rest = value[0:19], value[19:]
+            value = datetime.datetime.strptime(dt_string, '%Y-%m-%dT%H:%M:%S')
+        self._when = value
+
+    def __eq__(self, other):
+        return self is other or (self.title == other.title and
+                                 self.link == other.link)
+
+    def __str__(self):
+        return ('<Reading [id={0._id} title={0.title}, '
+                'link={0.link}]>'.format(self))
+
+    def __hash__(self):
+        return 3 + (hash(self.title) * 5) + (hash(self.link) * 7)
 
