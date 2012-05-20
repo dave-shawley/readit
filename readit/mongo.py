@@ -12,7 +12,7 @@ class Storage(readit.Storage):
     _CONN = None
     _CONN_LOCK = threading.Lock()
 
-    def __init__(self):
+    def __init__(self, storage_url=None):
         super(Storage, self).__init__()
 
     def _add_to_bin(self, storage_bin, storage_id, persist_value):

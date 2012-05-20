@@ -50,15 +50,19 @@ class Application(flask.Flask, readit.LinkMap):
         flask.Flask.__init__(self, __package__)
         readit.LinkMap.__init__(self)
         self.config['SECRET_KEY'] = os.urandom(24)
-        self.config.setdefault('SESSION_LIFETIME', 5 * 60)
-        self.config.setdefault('HOST', os.environ.get('HOST', '127.0.0.1'))
-        self.config.setdefault('PORT', os.environ.get('PORT', '5000'))
-        flag = os.environ.get('DEBUG', None)
-        if flag is not None:
-            self.config['DEBUG'] = flag.lower() in ['true', 't', 'yes', '1']
+        self.load_configuration()
         self.oid = flaskext.openid.OpenID(self)
         self.oid.after_login(self._login_succeeded)
         self.oid.errorhandler(self._report_openid_error)
+
+    def load_configuration(self):
+        self.config['SESSION_LIFETIME'] = 5 * 60
+        self.config['HOST'] = os.environ.get('HOST', '127.0.0.1')
+        self.config['PORT'] = os.environ.get('PORT', '5000')
+        self.config['STORAGE_URL'] = os.environ.get('MONGOURL', '')
+        flag = os.environ.get('DEBUG', None)
+        if flag is not None:
+            self.config['DEBUG'] = flag.lower() in ['true', 't', 'yes', '1']
 
     @property
     def openid(self):
@@ -187,7 +191,7 @@ def initialize_user():
 def setup_storage():
     if not hasattr(flask.g, 'db'):
         import readit.mongo
-        flask.g.db = readit.mongo.Storage()
+        flask.g.db = readit.mongo.Storage(storage_url=app.config['STORAGE_URL'])
 
 
 @app.route('/')

@@ -236,3 +236,16 @@ class ApplicationTests(ReaditTestCase):
             storage.remove.assert_called_with('readings', '<UserId>',
                     _id=reading_obj._id)
 
+    @mock.patch(STORAGE_CLASS)
+    @mock.patch.dict('os.environ', {'MONGOURL': '<MongoStorageUrl>'})
+    def test_connection_string_comes_from_env(self, storage_class):
+        readit.app.load_configuration()
+        storage = storage_class.return_value
+        storage.retrieve.return_value = {'readings': {}}
+        self.load_session(session_key=self.session_key)
+        request_url = self.get_session_url_for('/readings')
+        with readit.app.test_request_context(request_url):
+            readit.app.preprocess_request()
+            self.client.get(request_url)
+            storage_class.assert_called_with(storage_url='<MongoStorageUrl>')
+

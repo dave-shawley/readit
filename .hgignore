@@ -8,3 +8,5 @@ docs/_build/
 README.html
 nosetests.xml
 reference/
+.heroku
+.git/
