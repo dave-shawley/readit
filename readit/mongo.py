@@ -14,6 +14,7 @@ class Storage(readit.Storage):
 
     def __init__(self, storage_url=None):
         super(Storage, self).__init__()
+        self.storage_url = storage_url
 
     def _add_to_bin(self, storage_bin, storage_id, persist_value):
         conn = self.get_mongo_connection()
@@ -35,11 +36,10 @@ class Storage(readit.Storage):
         print 'deleting', str(constraint), 'from', str(collection)
         collection.remove(constraint)
 
-    @classmethod
-    def get_mongo_connection(cls):
-        if cls._CONN is None:
-            with cls._CONN_LOCK:
-                if cls._CONN is None:
-                    cls._CONN = pymongo.Connection()
-        return cls._CONN.readit
+    def get_mongo_connection(self):
+        if Storage._CONN is None:
+            with Storage._CONN_LOCK:
+                if Storage._CONN is None:
+                    Storage._CONN = pymongo.Connection(host=self.storage_url)
+        return Storage._CONN.readit
 

@@ -38,6 +38,7 @@ class MongoStorageTests(TestCase):
         self.build_mongo_connection(mongo_conn_class)
         self.mongo_cursor.find.return_value = []
         self.storage.retrieve('<Bin>', '<Id>')
+        mongo_conn_class.assert_called_with(host=None)
         self.mongo_bin.__getitem__.assert_called_with('<Bin>')
         self.mongo_slot.__getitem__.assert_called_with('<Id>')
 
@@ -45,6 +46,7 @@ class MongoStorageTests(TestCase):
     def test_save_opens_connection(self, mongo_conn_class):
         self.build_mongo_connection(mongo_conn_class)
         self.storage.save('<Bin>', '<Id>', pi=(22.0 / 7.0))
+        mongo_conn_class.assert_called_with(host=None)
         self.mongo_bin.__getitem__.assert_called_with('<Bin>')
         self.mongo_slot.__getitem__.assert_called_with('<Id>')
 
@@ -82,4 +84,12 @@ class MongoStorageTests(TestCase):
         self.storage.remove('<Bin>', '<Id>', _id='4f78d1f94e02d89ba0000000')
         self.mongo_cursor.remove.assert_called_with({
             '_id': ObjectId('4f78d1f94e02d89ba0000000')})
+
+    @mock.patch(CONNECTION_CLASS)
+    def test_new_connection_uses_storage_url(self, mongo_conn_class):
+        self.storage = readit.mongo.Storage('<MongoConnectionUrl>')
+        self.build_mongo_connection(mongo_conn_class)
+        self.mongo_cursor.find.return_value = []
+        self.storage.retrieve('<Bin>', '<Id>')
+        mongo_conn_class.assert_called_with(host='<MongoConnectionUrl>')
 
