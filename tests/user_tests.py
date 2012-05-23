@@ -82,9 +82,3 @@ class UserTests(TestCase):
         new_user.from_persistence(persist)
         self.assertEquals(self.user, new_user)
 
-    def test_user_is_storable(self):
-        storage = readit.Storage()
-        storage.save('users', '<Id>', self.user)
-        result = storage.retrieve_one('users', '<Id>')
-        self.assertEquals(self.user.to_persistence(), result)
-

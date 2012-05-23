@@ -78,12 +78,6 @@ class ReadingTests(TestCase):
         new_reading.from_persistence(persist)
         self.assertEquals(self.reading, new_reading)
 
-    def test_reading_is_storable(self):
-        storage = readit.Storage()
-        storage.save('readings', '<Id>', self.reading)
-        result = storage.retrieve_one('readings', '<Id>')
-        self.assertEquals(self.reading.to_persistence(), result)
-
     def test_important_attributes_stored(self):
         persist = self.reading.to_persistence()
         self.assertIn('title', persist)

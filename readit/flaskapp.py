@@ -59,7 +59,7 @@ class Application(flask.Flask, readit.LinkMap):
         self.config['SESSION_LIFETIME'] = 5 * 60
         self.config['HOST'] = os.environ.get('HOST', '127.0.0.1')
         self.config['PORT'] = os.environ.get('PORT', '5000')
-        self.config['STORAGE_URL'] = os.environ.get('MONGOURL', '')
+        self.config['STORAGE_URL'] = os.environ.get('MONGOURL', None)
         flag = os.environ.get('DEBUG', None)
         if flag is not None:
             self.config['DEBUG'] = flag.lower() in ['true', 't', 'yes', '1']
@@ -72,7 +72,7 @@ class Application(flask.Flask, readit.LinkMap):
 
     # @openid.after_login
     def _login_succeeded(self, response):
-        result = flask.g.db.retrieve_one('users', response.email)
+        result = flask.g.db.retrieve_one('users', email=response.email)
         if result:
             flask.g.user.login(response)
             flask.g.user.user_id = result['user_id']

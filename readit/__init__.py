@@ -1,7 +1,7 @@
 # order is important here
 from .helpers import LinkMap
 from .reading import Reading
-from .storage import MoreThanOneResultError, StorableItem, Storage
+from .storage import MoreThanOneResultError, StorableItem
 from .user import User
 
 # flaskapp import required to be last since it depends on

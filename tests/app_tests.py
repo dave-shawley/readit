@@ -86,7 +86,8 @@ class LoginTests(ReaditTestCase):
             readit.app.preprocess_request()
             self.assertNotIn('user_id', flask.session)
             readit.app._login_succeeded(oid_details)
-            storage.retrieve_one.assert_called_once_with('users', '<Email>')
+            storage.retrieve_one.assert_called_once_with('users',
+                    email='<Email>')
             self.assertEquals(flask.session['user_id'], '<UserId>')
 
     @mock.patch(STORAGE_CLASS)
