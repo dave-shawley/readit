@@ -72,15 +72,15 @@ class Application(flask.Flask, readit.LinkMap):
 
     # @openid.after_login
     def _login_succeeded(self, response):
-        result = flask.g.db.retrieve_one('users', email=response.email)
+        result = flask.g.db.retrieve_one('users', email=response.email,
+                clazz=readit.User)
         if result:
+            flask.g.user = result
             flask.g.user.login(response)
-            flask.g.user.user_id = result['user_id']
             flask.session['session_key'] = flask.g.user.session_key
-            flask.session['user_id'] = result['user_id']
-            self.logger.debug('login succeeded for %s => %s/%s/%s',
-                    flask.session['session_key'], flask.g.user.user_id,
-                    flask.g.user.open_id, flask.g.user.email)
+            flask.session['user_id'] = flask.g.user.user_id
+            self.logger.debug('login succeeded for %s => %s',
+                    flask.session['session_key'], flask.g.user)
             next = flask.request.args.get('next') or self.oid.get_next_url()
             self.logger.debug('redirecting to %s', next)
             return flask.redirect(next)
@@ -258,8 +258,9 @@ def reading_list(session_key):
     if readit.helpers.wants_json(flask.request):
         app.logger.debug('retrieving data from %s for %s',
                 flask.g.db, flask.g.user.user_id)
-        data = flask.g.db.retrieve('readings', flask.g.user.user_id,
-                factory=readit.Reading)
+        data = flask.g.db.retrieve('readings',
+                user_id=flask.g.user.user_id,
+                clazz=readit.Reading)
         return app.jsonify({'actions': app.links, 'readings': data})
     return flask.render_template('list.html', actions=app.links)
 
@@ -271,10 +272,11 @@ def add_reading(session_key):
     data = flask.request.json or flask.request.form
     try:
         app.logger.debug('saving reading to %s for %s',
-                flask.g.db, flask.g.user.user_id)
+                flask.g.db, flask.g.user)
         reading = readit.Reading(title=data['title'], link=data['link'],
-                when=data.get('when', datetime.datetime.utcnow()))
-        flask.g.db.save('readings', flask.g.user.user_id, reading)
+                when=data.get('when', datetime.datetime.utcnow()),
+                user=flask.g.user)
+        flask.g.db.save('readings', reading)
         return app.jsonify({'actions': app.links, 'new_reading': reading})
     except KeyError, exc:
         raise werkzeug.exceptions.BadRequest(

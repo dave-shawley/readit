@@ -6,34 +6,6 @@ import readit
 from .testing import TestCase, skipped
 
 
-def load_storage_data(storage, storage_bin, storage_id):
-    objects = [
-            {'name': 'Guido', 'origin': 'Netherlands', 'sign': 'Aquarius'},
-            {'name': 'Bjarne', 'origin': 'Denmark', 'sign': 'Capricorn'},
-            {'name': 'Larry', 'origin': 'USA', 'sign': 'Libra'},
-            {'name': 'Bertrand', 'origin': 'France', 'sign': 'Scorio'},
-            {'name': 'Dennis', 'origin': 'USA', 'sign': 'Virgo'},
-            ]
-    for obj in objects:
-        storage.save(storage_bin, storage_id, obj)
-    return objects
-
-def load_storag_data(storage, bin):
-    objects = [
-            {'name': 'Guido', 'origin': 'Netherlands', 'sign': 'Aquarius'},
-            {'name': 'Bjarne', 'origin': 'Denmark', 'sign': 'Capricorn'},
-            {'name': 'Larry', 'origin': 'USA', 'sign': 'Libra'},
-            {'name': 'Bertrand', 'origin': 'France', 'sign': 'Scorio'},
-            {'name': 'Dennis', 'origin': 'USA', 'sign': 'Virgo'},
-            ]
-    for obj in objects:
-        storage.save(bin, storable=obj)
-    return objects
-
-def extract_name(data_object):
-    return data_object['name']
-
-
 class StorableItem(readit.StorableItem):
     def __init__(self, ident=None, value=None):
         super(StorableItem, self).__init__('ident', 'value')

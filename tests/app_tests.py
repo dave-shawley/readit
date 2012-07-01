@@ -23,6 +23,13 @@ class LoginTests(ReaditTestCase):
     def setUp(self):
         super(LoginTests, self).setUp()
         self.saved_oid = readit.app.oid
+        self.fake_user = readit.User()
+        self.fake_user.email = '<EmailAddress>'
+        self.fake_user.user_id = '<UserId>'
+        self.fake_oid_details = mock.Mock()
+        self.fake_oid_details.openid = '<ReturnedOpenId>'
+        self.fake_oid_details.identity_url = '<IdentityUrl>'
+        self.fake_oid_details.email = '<EmailAddress>'
 
     def tearDown(self):
         readit.app.oid = self.saved_oid
@@ -36,23 +43,20 @@ class LoginTests(ReaditTestCase):
             'openid': 'Open ID input value',
             })
         self.assertEquals(rv.data, 'Open ID return value')
-        oid_details = mock.Mock()
-        oid_details.identity_url = 'identity url'
         open_id.get_next_url.return_value = 'http://next.url/'
         with readit.app.test_request_context('/'):
             readit.app.preprocess_request()  # invoke before handlers
             flask.g.db = mock.Mock()
-            flask.g.db.retrieve_one.return_value = {"user_id": "1"}
-            rv = readit.app._login_succeeded(oid_details)
+            flask.g.db.retrieve_one.return_value = self.fake_user
+            rv = readit.app._login_succeeded(self.fake_oid_details)
             self.assertTrue(300 <= rv.status_code < 400)
             self.assertEquals(rv.headers['location'], 'http://next.url/')
-            self.assertEquals('identity url', flask.g.user.open_id)
-            self.assertEquals(flask.g.user.session_key,
-                    flask.session['session_key'])
+            self.assertEquals(flask.g.user.open_id,
+                    self.fake_oid_details.identity_url)
+            self.assertEquals(flask.session['session_key'],
+                    flask.g.user.session_key)
 
     def test_openid_login_honors_next_param(self):
-        oid_details = mock.Mock()
-        oid_details.identity_url = '<OidIdentityUrl>'
         readit.app.oid = mock.Mock()
         self.should_not_be_called(readit.app.oid, 'get_next_url')
         with readit.app.test_request_context(
@@ -60,13 +64,14 @@ class LoginTests(ReaditTestCase):
                 data={'openid': '<RequestedOpenId>'}):
             readit.app.preprocess_request()  # invoke before handlers
             flask.g.db = mock.Mock()
-            flask.g.db.retrieve_one.return_value = {"user_id": "<UserId>"}
-            rv = readit.app._login_succeeded(oid_details)
+            flask.g.db.retrieve_one.return_value = self.fake_user
+            rv = readit.app._login_succeeded(self.fake_oid_details)
             self.assertTrue(300 <= rv.status_code < 400)
             self.assertEquals(rv.headers['location'], 'http://next.url/')
-            self.assertEquals('<OidIdentityUrl>', flask.g.user.open_id)
-            self.assertEquals(flask.g.user.session_key,
-                    flask.session['session_key'])
+            self.assertEquals(flask.g.user.open_id,
+                    self.fake_oid_details.identity_url)
+            self.assertEquals(flask.session['session_key'],
+                    flask.g.user.session_key)
 
     def test_login_form_honors_next_param(self):
         rv = self.client.get('/login?next=http%3A//next.url/')
@@ -77,28 +82,25 @@ class LoginTests(ReaditTestCase):
 
     @mock.patch(STORAGE_CLASS)
     def test_user_lookup_in_login(self, storage_class):
-        oid_details = mock.Mock()
-        oid_details.identity_url = '<Identity>'
-        oid_details.email = '<Email>'
         storage = storage_class.return_value
-        storage.retrieve_one.return_value = {'user_id': '<UserId>'}
+        storage.retrieve_one.return_value = self.fake_user
         with readit.app.test_request_context('/'):
             readit.app.preprocess_request()
             self.assertNotIn('user_id', flask.session)
-            readit.app._login_succeeded(oid_details)
+            readit.app._login_succeeded(self.fake_oid_details)
             storage.retrieve_one.assert_called_once_with('users',
-                    email='<Email>')
-            self.assertEquals(flask.session['user_id'], '<UserId>')
+                    email=self.fake_oid_details.email,
+                    clazz=readit.User)
+            self.assertEquals(flask.session['user_id'],
+                    self.fake_user.user_id)
 
     @mock.patch(STORAGE_CLASS)
     def test_login_fails_for_unknown_user(self, storage_class):
-        oid_details = mock.Mock()
-        oid_details.identity_url = '<Identity>'
         storage = storage_class.return_value
         storage.retrieve_one.return_value = None
         with readit.app.test_request_context('/'):
             readit.app.preprocess_request()
-            rv = readit.app._login_succeeded(oid_details)
+            rv = readit.app._login_succeeded(self.fake_oid_details)
             self.assertEquals(404, rv.status_code)
 
     def test_openid_failure_triggers_500(self):
@@ -181,8 +183,8 @@ class ApplicationTests(ReaditTestCase):
             readit.app.preprocess_request()
             storage.retrieve.return_value = {'readings': {}}
             self.client.get(reading_link, headers=headers)
-            storage.retrieve.assert_called_with('readings', '<UserId>',
-                    factory=readit.Reading)
+            storage.retrieve.assert_called_with('readings',
+                    user_id='<UserId>', clazz=readit.Reading)
 
     @mock.patch(STORAGE_CLASS)
     def test_add_json_reading(self, storage_class):
@@ -200,8 +202,7 @@ class ApplicationTests(ReaditTestCase):
             rsp = self.client.post(reading_link, data=data,
                     content_type='application/json')
             self.assert_is_http_success(rsp)
-            storage.save.assert_called_with('readings', '<UserId>',
-                    reading_obj)
+            storage.save.assert_called_with('readings', reading_obj)
 
     @mock.patch(STORAGE_CLASS)
     def test_add_form_reading(self, storage_class):
@@ -217,25 +218,25 @@ class ApplicationTests(ReaditTestCase):
             rsp = self.client.post(reading_link, data={
                 'title': reading_obj.title, 'link': reading_obj.link})
             self.assert_is_http_success(rsp)
-            storage.save.assert_called_with('readings', '<UserId>',
-                    reading_obj)
+            storage.save.assert_called_with('readings', reading_obj)
 
     @mock.patch(STORAGE_CLASS)
     def test_remove_reading(self, storage_class):
         storage = storage_class.return_value
         self.load_session(session_key=self.session_key, user_id='<UserId>')
         reading_obj = readit.Reading()
+        reading_obj.object_id = "123456abcdef"
         reading_obj.title = 'Method Resolution Order'
         reading_obj.link = ('http://python-history.blogspot.com/2010/06/'
                 'method-resolution-order.html')
         reading_link = self.get_session_url_for('/readings/' +
-                urllib.quote(reading_obj._id))
+                urllib.quote(reading_obj.object_id))
         with readit.app.test_request_context('/'):
             readit.app.preprocess_request()
             rsp = self.client.delete(reading_link)
             self.assert_is_http_success(rsp)
             storage.remove.assert_called_with('readings', '<UserId>',
-                    _id=reading_obj._id)
+                    _id=reading_obj.object_id)
 
     @mock.patch(STORAGE_CLASS)
     @mock.patch.dict('os.environ', {'MONGOURL': '<MongoStorageUrl>'})

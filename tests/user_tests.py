@@ -4,10 +4,10 @@ import mock
 
 import readit
 
-from .testing import TestCase
+import testing
 
 
-class UserTests(TestCase):
+class UserTests(testing.TestCase):
     def setUp(self):
         self.random_session_key = os.urandom(16)
         self.user = readit.User(None)
@@ -73,12 +73,21 @@ class UserTests(TestCase):
         self.user.login(oid_details)
         self.assertEquals(self.user.user_id, mock.sentinel.user_id)
 
-    def test_user_implements_storable_protocol(self):
-        persist = self.user.to_persistence()
-        for attr_name in self.user._PERSIST:
-            self.assertEquals(getattr(self.user, attr_name),
-                    persist[attr_name])
-        new_user = readit.User()
-        new_user.from_persistence(persist)
-        self.assertEquals(self.user, new_user)
+    def test_object_id_property(self):
+        self.user.object_id = 42  # this will be stringified
+        self.assertEquals(self.user.object_id, '42')
+        self.assertEquals(self.user.object_id, self.user.user_id)
+
+
+class StorableProtocolTests(testing.StorableItemTestCase):
+    StorableClass = readit.User
+    REQUIRED_ATTRIBUTES = ['email']
+    OPTIONAL_ATTRIBUTES = ['display_name']
+
+    def create_storable_instance(self):
+        a_user = readit.User()
+        a_user.email = '<EMailAddress>'
+        return a_user
+
+
 

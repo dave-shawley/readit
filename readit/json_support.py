@@ -72,23 +72,33 @@ class DateTimeJSONSupport(object):
 
 
 class StorableItemJSONSupport(object):
-    """I know how to encode :py:class:`readit.StorableItem` instances.
+    """I know how to encode instances that implement the ``StorableItem``
+    protocol.
     
     ``StorableItem`` instances are actually quite easy to store since the
-    :py:meth:`readit.StorableItem.to_persistence` method returns a dictionary
-    instance.  All that I do is make sure that the method exists and call it
-    when I need to encode an instance.
+    ``to_persistence`` method returns a dictionary instance.  All that I do
+    is make sure that the method exists, call it when I need to encode an
+    instance, and tack on the ``object_id``.
     
     >>> self = StorableItemJSONSupport()
     >>> class Item(object):
+    ...   def __init__(self):
+    ...      self.object_id = 1234
     ...   def to_persistence(self):
     ...     return {'attribute': 'value'}
     ...
     >>> obj = Item()
     >>> self.can_encode(obj)
     True
-    >>> self.encode(obj)
-    {'attribute': 'value'}
+    >>> result = self.encode(obj)
+    >>> result['attribute'], result['object_id']
+    ('value', 1234)
+
+    Note that the ``object_id`` property is passed through as an integer
+    in this case.  Properties will be recursively processed if necessary.
+    This is important since the ``object_id`` is most likely something like
+    a MongoDB py:class:`~pymongo.objectid.ObjectId` instance which is
+    handled by a separate support package.
     """
     def __init__(self, *args, **kwds):
         super(StorableItemJSONSupport, self).__init__(*args, **kwds)
@@ -97,7 +107,9 @@ class StorableItemJSONSupport(object):
         return hasattr(obj, 'to_persistence')
 
     def encode(self, obj):
-        return obj.to_persistence()
+        encoded = obj.to_persistence()
+        encoded['object_id'] = obj.object_id
+        return encoded
 
 
 class ObjectIdJSONSupport(object):
@@ -109,7 +121,7 @@ class ObjectIdJSONSupport(object):
     True
     >>> self.encode(oid)
     '4fadcd174e02d83c8c000000'
-
+    
     Object ID's are simply passed around as strings.  They could be easily
     translated into JSONRPC syntax, but that really complicates things
     more than necessary.
@@ -127,19 +139,12 @@ class ObjectIdJSONSupport(object):
 class ReadingSupport(StorableItemJSONSupport):
     """I provide a little additional magic for :py:class:`readit.Reading`
     objects.
-
+    
     >>> self = ReadingSupport()
     >>> a_reading = readit.Reading()
     >>> self.can_encode(a_reading)
     True
     >>> result = self.encode(a_reading)
-    >>> hasattr(a_reading, '_id'), '_id' in result
-    (True, False)
-    >>> result['id'] == str(a_reading._id)
-    True
-
-    In particular, I rename the :py:attr:`~readit.Reading._id` attribute to
-    the more common ``id``.
     """
     def __init__(self, *args, **kwds):
         super(ReadingSupport, self).__init__(*args, **kwds)
@@ -152,18 +157,16 @@ class ReadingSupport(StorableItemJSONSupport):
         encoded = super(ReadingSupport, self).encode(obj)
         if isinstance(obj, readit.Reading):
             encoded['__class__'] = 'readit.Reading'
-            if '_id' in encoded:
-                encoded['id'] = encoded['_id']
-                del encoded['_id']
         return encoded
 
 
 def _deserialize_object_hook(a_dict):
     if '__class__' in a_dict:
-        if a_dict['__class__'] == 'readit.Reading':
-            if 'id' in a_dict:
-                a_dict['_id'] = a_dict['id']
-                del a_dict['id']
+        #if a_dict['__class__'] == 'readit.Reading':
+        #    if 'object_id' in a_dict:
+        #        a_dict['_id'] = a_dict['id']
+        #        del a_dict['id']
+        pass
     return a_dict
 
 

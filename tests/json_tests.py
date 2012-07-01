@@ -7,17 +7,27 @@ import readit
 import readit.json_support
 
 
+class CoordinateObject(object):
+    def __init__(self, x, y):
+        self.x, self.y = x, y
+        self.object_id = pymongo.objectid.ObjectId()
+
+    def to_persistence(self):
+        return {'x': self.x, 'y': self.y}
+
+
 class JSONTests(TestCase):
     def setUp(self):
         self.encoder = readit.json_support.JSONEncoder()
         self.decoder = readit.json_support.JSONDecoder()
 
     def test_storable_support(self):
-        item = readit.StorableItem()
-        item.attr = 'value'
+        item = CoordinateObject(1, 2)
         json_str = self.encoder.encode(item)
         result = self.decoder.decode(json_str)
-        self.assertEquals({'attr': 'value'}, result)
+        self.assertEquals(result['x'], item.x)
+        self.assertEquals(result['y'], item.y)
+        self.assertEquals(result['object_id'], str(item.object_id))
 
     def test_datetime_support(self):
         ts = datetime.datetime.utcnow()
@@ -56,11 +66,13 @@ class JSONTests(TestCase):
 
     def test_reading_support_with_uuid_based_id(self):
         a_reading = readit.Reading(title='Title', link='Link')
+        a_reading.object_id = pymongo.objectid.ObjectId()
         json_str = self.encoder.encode(a_reading)
+        print json_str
         value = self.decoder.decode(json_str)
         self.assertEquals(value['__class__'], 'readit.Reading')
-        self.assertEquals(a_reading.title, value['title'])
-        self.assertEquals(a_reading.link, value['link'])
-        self.assertEquals(a_reading._id, value['_id'])
-        self.assertEquals(a_reading.when.isoformat()+'Z', value['when'])
+        self.assertEquals(value['title'], a_reading.title)
+        self.assertEquals(value['link'], a_reading.link)
+        self.assertEquals(value['when'], a_reading.when.isoformat()+'Z')
+        self.assertEquals(value['object_id'], str(a_reading.object_id))
 

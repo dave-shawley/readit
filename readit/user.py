@@ -13,12 +13,13 @@ import uuid
 import readit
 
 
-class User(readit.StorableItem):
+class User(object):
     """I represent a user that is registered in the system.
     
     I am identified by a unique ID value that is assigned by the underlying
     system when the user is created.  I have a few attributes of my own
-    as well.
+    as well.  The unique ID is stored in :py:attr:`user_id` but is also
+    available as :py:attr:`object_id`, more on that shortly.
     
     >>> u = User()
     >>> u.session_key, u.open_id, u.display_name, u.user_id, u.email
@@ -45,9 +46,20 @@ class User(readit.StorableItem):
     >>> u.logout()
     >>> u.logged_in
     False
+    
+    The persistence aspects of a user are handled by implementing the expected
+    StorableItem protocol using the :py:attr:`user_id` attribute as the unique
+    identifier for a user.  This is why it is aliased as :py:attr:`object_id`.
+    
+    >>> u = User.from_persistence({'email': 'dave@example.com',
+    ...   'display_name': 'Dave Shawley',
+    ...   'openid': 'http://openid.net/me'})
+    >>> persist = u.to_persistence()
+    >>> persist['email'] == u.email
+    True
+    >>> persist['display_name'] == u.display_name
+    True
     """
-
-    _PERSIST = ['user_id', 'email', 'display_name']
 
     def __init__(self, session_key=None):
         super(User, self).__init__()
@@ -149,4 +161,27 @@ class User(readit.StorableItem):
     def logged_in(self):
         """Is the user currently logged in?"""
         return self._session_key is not None
+
+    def to_persistence(self):
+        """Return a dictionary of attributes to persist."""
+        return {'email': self.email, 'display_name': self.display_name}
+
+    @classmethod
+    def from_persistence(clazz, value_dict):
+        instance = clazz()
+        instance.email = value_dict['email']
+        instance.display_name = value_dict.get('display_name', instance.email)
+        return instance
+
+    @property
+    def object_id(self):
+        return self.user_id
+
+    @object_id.setter
+    def object_id(self, value):
+        self.user_id = str(value)
+
+    def str(self):
+        return (r'user <{0.user_id}, email={0.email}, ' +
+                r'open_id={0.open_id}>'.format(self))
 

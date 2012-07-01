@@ -4,7 +4,7 @@ import uuid
 from .storage import StorableItem
 
 
-class Reading(StorableItem):
+class Reading(object):
     """I represent something that a :py:class:`~readit.User` has read.
     
     A reading is little more than a display name, a link, and a timestamp.
@@ -20,15 +20,16 @@ class Reading(StorableItem):
     The other interesting property of an item that the user has read is
     when it was read.  This is tracked by my ``when`` attribute which is
     a :py:class:`~datetime.datetime` instance but can specified as a
-    ISO-8601 encoded string as well.
+    ISO-8601 encoded string as well.  However, ``datetime`` instances
+    have the sub-second portion dropped.
     
     >>> when = '2012-03-24T11:56:48Z'
     >>> r = Reading('<Title>', '<Link>', when)
     >>> r.when
     datetime.datetime(2012, 3, 24, 11, 56, 48)
-    >>> when = datetime.datetime.utcnow()
-    >>> r = Reading('<Title>', '<Link>', when)
-    >>> r.when == when
+    >>> now = datetime.datetime.utcnow()
+    >>> r = Reading(title='<Title>', link='<Link>', when=now)
+    >>> r.when == (now - datetime.timedelta(microseconds=now.microsecond))
     True
     
     I also act as a simple value type that is comparable for equality and
@@ -46,29 +47,17 @@ class Reading(StorableItem):
     >>> a_set.remove(Reading('<Title>', '<Link>'))
     >>> len(a_set)
     0
-    
-    The final interesting attribute is that I have a unique identifying
-    string that you can access with the :py:attr:`~readit.Reading.id`
-    attribute.  If you do not assign one, I will gladly create a GUID-based
-    identifier.  You can overwrite the identifier freely and it does not
-    factor into my view of equality.
-    
-    >>> r2 = Reading('<Title>', '<Link>')
-    >>> r1 == r2 and r1._id != r2._id
-    True
-    >>> r1._id = r2._id
-    >>> r1 == r2 and r1._id == r2._id
-    True
     """
 
-    _PERSIST = ['_id', 'title', 'link', 'when']
-
-    def __init__(self, title=None, link=None, when=None):
+    def __init__(self, title=None, link=None, when=None, user=None):
         super(Reading, self).__init__()
+        self.object_id = None
+        self.user_id = None
         self.title = title
         self.link = link
         self.when = when or datetime.datetime.utcnow()
-        self._id = str(uuid.uuid4())
+        if user is not None:
+            self.user_id = user.object_id
 
     @property
     def when(self):
@@ -79,16 +68,33 @@ class Reading(StorableItem):
         if isinstance(value, (str, unicode)):
             dt_string, rest = value[0:19], value[19:]
             value = datetime.datetime.strptime(dt_string, '%Y-%m-%dT%H:%M:%S')
-        self._when = value
+        self._when = value - datetime.timedelta(microseconds=value.microsecond)
+
+    def to_persistence(self):
+        return {'title': self.title, 'link': self.link, 'when': self.when,
+                'user_id': self.user_id}
+    
+    @classmethod
+    def from_persistence(clazz, persist_dict):
+        # requires all attributes
+        instance = clazz()
+        instance.title = persist_dict['title']
+        instance.link = persist_dict['link']
+        instance.when = persist_dict['when']
+        instance.user_id = persist_dict['user_id']
+        return instance
 
     def __eq__(self, other):
-        return self is other or (self.title == other.title and
-                                 self.link == other.link)
+        if self is other:
+            return True
+        if other is None:
+            return False
+        return self.title == other.title and self.link == other.link
 
     def __str__(self):
-        return ('<Reading [id={0._id} title={0.title}, '
+        return ('<Reading [id={0.object_id} title={0.title}, '
                 'link={0.link}]>'.format(self))
 
     def __hash__(self):
-        return 3 + (hash(self.title) * 5) + (hash(self.link) * 7)
+        return (3 + hash(self.title)) + (5 * hash(self.link))
 

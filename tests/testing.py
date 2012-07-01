@@ -19,6 +19,9 @@ import unittest
 
 import readit
 
+# this makes nose ignore tests defined in this file
+__test__ = False
+
 
 (major, minor) = sys.version_info[0:2]
 if major < 2 or (major == 2 and minor < 7):
@@ -165,6 +168,52 @@ class ReaditTestCase(HttpTestHelper):
         if link_data['method'] == 'GET':
             return self.client.get(link_data['url'])
         self.fail('unhandled link ' + str(link_data))
+
+
+class StorableItemTestCase(TestCase, object):
+    '''Version of :py:class:`unittest.TestCase` that verifies that a
+    class faithfully implements the ``StorableItem`` protocol.'''
+
+    StorableClass = None      # you are required to set this in the subclass
+    REQUIRED_ATTRIBUTES = []  # populate this appropriately
+    OPTIONAL_ATTRIBUTES = []  # populate this appropriately
+
+    def setUp(self):
+        self.storable = self.create_storable_instance()
+
+    def test_storable_protocol_implemented(self):
+        self.storable.object_id = '<ThisValueIsIgnored>'
+        persist = self.storable.to_persistence()
+        new_instance = self.StorableClass.from_persistence(persist)
+        for attr in persist:
+            self.assertEquals(getattr(new_instance, attr), persist[attr])
+        # this will be added by the persistence layer
+        self.assertIsNone(new_instance.object_id)
+
+    def test_required_attributes_are_stored(self):
+        persist = self.storable.to_persistence()
+        for attr_name in self.REQUIRED_ATTRIBUTES:
+            self.assertIn(attr_name, persist)
+
+    def test_optional_attributes_can_be_round_tripped(self):
+        if self.OPTIONAL_ATTRIBUTES:
+            for attr_name in self.OPTIONAL_ATTRIBUTES:
+                setattr(self.storable, attr_name, '<' + attr_name + 'Value>')
+            persist = self.storable.to_persistence()
+            self.StorableClass.from_persistence(persist)
+            for attr_name in self.OPTIONAL_ATTRIBUTES:
+                self.assertIsNotNone(getattr(self.storable, attr_name))
+
+    def test_from_persistence_requires_attributes(self):
+        for attr_name in self.REQUIRED_ATTRIBUTES:
+            persist = self.storable.to_persistence()
+            del persist[attr_name]
+            with self.assertRaises(KeyError):
+                self.StorableClass.from_persistence(persist)
+
+    def create_storable_instance(self):
+        raise NotImplementedError('create_storable_instance is not '
+                + 'implemented by ' + str(self.__class__))
 
 
 def skipped(f):

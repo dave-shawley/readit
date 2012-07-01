@@ -4,15 +4,15 @@ import mock
 
 import readit
 
-from .testing import TestCase
+import testing
 
 
-class ReadingTests(TestCase):
+class ReadingTests(testing.TestCase):
     def setUp(self):
         super(ReadingTests, self).setUp()
         self.user = readit.User()
         self.reading = readit.Reading('<Title>', '<Link>')
-        # we need a datetime object after we patch below
+        # we need a datetime object after we patch below so create it here
         self.now = datetime.datetime(2012, 1, 19, 14, 15, 25)
 
     def test_list_for_unknown_user_is_empty(self):
@@ -43,49 +43,35 @@ class ReadingTests(TestCase):
         self.user.add_reading(self.reading)
         self.assertEquals(1, len(self.user.readings))
 
-    def test_reading_is_hashable(self):
-        readings = set()
-        readings.add(readit.Reading('<Title>', '<Link>'))
-        self.assertEquals(1, len(readings))
-        readings.add(readit.Reading('<Title>', '<Link>'))
-        self.assertEquals(1, len(readings))
-        readings.remove(readit.Reading('<Title>', '<Link>'))
-        self.assertEquals(0, len(readings))
-
-    def test_hash_magic_behaves(self):
-        reading1 = readit.Reading('<Title>', '<Link>')
-        reading2 = readit.Reading('<title>', '<Link>')
-        reading3 = readit.Reading('<Title>', '<Link>')
-        self.assertNotEquals(hash(reading1), hash(reading2))
-        self.assertEquals(hash(reading1), hash(reading3))
-        self.assertEquals(hash(readit.Reading(None, None)),
-                hash(readit.Reading(None, None)))
-
     def test_str_magic_behaves(self):
         reading1 = readit.Reading('<Title>', '<Link>')
         reading2 = readit.Reading('<Title>', '<Link>')
         reading3 = readit.Reading(None, None)
-        reading1._id = reading2._id
         self.assertEquals(str(reading1), str(reading2))
         self.assertNotEquals(str(reading1), str(reading3))
 
-    def test_reading_implements_storable_protocol(self):
-        persist = self.reading.to_persistence()
-        for attr_name in self.reading._PERSIST:
-            self.assertEqual(getattr(self.reading, attr_name),
-                    persist[attr_name])
-        new_reading = readit.Reading()
-        new_reading.from_persistence(persist)
-        self.assertEquals(self.reading, new_reading)
+    def test_iso8601_is_valid_when_value(self):
+        now = datetime.datetime.utcnow()
+        self.reading.when = now.strftime('%Y-%m-%dT%H:%M:%S')
+        # Note - subsecond portion stripped
+        now -= datetime.timedelta(microseconds=now.microsecond)
+        self.assertEquals(now, self.reading.when)
 
-    def test_important_attributes_stored(self):
-        persist = self.reading.to_persistence()
-        self.assertIn('title', persist)
-        self.assertIn('link', persist)
-        self.assertIn('when', persist)
+    def test_datetime_is_valid_when_value(self):
+        now = datetime.datetime.utcnow()
+        self.reading.when = now
+        # Note - subsecond portion stripped
+        now -= datetime.timedelta(microseconds=now.microsecond)
+        self.assertEquals(now, self.reading.when)
 
-    def test_reading_has_unique_id(self):
-        reading1 = readit.Reading('<Title>', '<Link>')
-        reading2 = readit.Reading('<Title>', '<Link>')
-        self.assertNotEquals(reading1._id, reading2._id)
+
+class StorableProtocolTests(testing.StorableItemTestCase):
+    StorableClass = readit.Reading
+    REQUIRED_ATTRIBUTES = ['title', 'link', 'when', 'user_id']
+
+    def create_storable_instance(self):
+        a_reading = readit.Reading(title='<Title>', link='<Link>')
+        a_reading.user_id = '<UserId>'
+        return a_reading
+
 
