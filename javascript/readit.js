@@ -42,7 +42,7 @@
 		// This is used as a constructor function to create new Reading objects
 		//
 		var Reading = function(data) {
-			data = data || {}
+			data = data || {};
 			this.id = data.id;
 			this.title = data.title;
 			this.link = data.link;
@@ -65,10 +65,46 @@
 			};
 		};
 
+        //
+        // Now for a few private/utility methods.
+        //
+        var updateUiForReading = function($uiElement, aReading) {
+            $uiElement.find(sel.title).text(aReading.title);
+            $uiElement.find(sel.when).text(aReading.when.toDateString());
+            $uiElement.find(sel.link).prop("href", aReading.link);
+            $uiElement.find(sel.url).text(aReading.link);
+        };
+
+        var debugMessage = function () {
+            if (!debug) {
+                return;
+            }
+            console.log(">> DEBUG");
+            var i;
+            for (i=0; i<arguments.length; i+=1) {
+                console.log(arguments[i]);
+            }
+            console.log("<< DEBUG");
+        };
+
+        var wasRedirected = function (ajaxData) {
+            if (ajaxData && ajaxData.hasOwnProperty("redirect_to")) {
+                debugMessage("handling redirect to " + ajaxData.redirect_to);
+                setLocation(ajaxData.redirect_to);
+                return true;
+            }
+            return false;
+        };
+
 		//
 		// Public Methods
 		//    These are exported by attaching them to ``that`` as we go.
 		//
+        var showReading = function(aReading) {
+            updateUiForReading(jQuery(sel.reading_info), aReading);
+        };
+        that.addMethod("showReading", showReading,
+                       "Updates the UI to match a reading.");
 		var update = function() {
 			that.readings.forEach(function (aReading) {
 				var $elm = jQuery("#" + aReading.id);
@@ -135,12 +171,6 @@
 		};
 		that.addMethod("fetchReadings", fetchReadings);
 
-		var showReading = function(aReading) {
-			updateUiForReading($(sel.reading_info), aReading);
-		};
-		that.addMethod("showReading", showReading,
-			"Updates the UI to match a reading.");
-
 		var createReading = function (attrs) {
 			return new Reading(attrs);
 		};
@@ -150,39 +180,11 @@
 		//
 		// Private methods & Helpers
 		//
-		var wasRedirected = function (ajaxData) {
-			if (ajaxData && ajaxData.hasOwnProperty("redirect_to")) {
-				debugMessage("handling redirect to " + ajaxData.redirect_to);
-				setLocation(ajaxData.redirect_to);
-				return true;
-			}
-			return false;
-		};
-
-		var debugMessage = function () {
-			if (!debug) {
-				return;
-			}
-			var i;
-			console.log(">> DEBUG");
-			for (i=0; i<arguments.length; ++i) {
-				console.log(arguments[i]);
-			}
-			console.log("<< DEBUG");
-		};
-
 		var deserializeReading = function (aReading) {
 			if (aReading.when) {
 				aReading.when = new Date(aReading.when);
 			}
 			return aReading;
-		};
-
-		var updateUiForReading = function($uiElement, aReading) {
-			$uiElement.find(sel.title).text(aReading.title);
-			$uiElement.find(sel.when).text(aReading.when.toDateString());
-			$uiElement.find(sel.link).prop("href", aReading.link);
-			$uiElement.find(sel.url).text(aReading.link);
 		};
 
 		// Register an AJAX error handler to display messages if the

@@ -1,5 +1,3 @@
-# we need 0.9 which is not released yet
-git+git://github.com/mitsuhiko/flask.git@086348e2f2874fb701048d5e1390cfe674de1f70
-# we need patches made post 1.0.1 which have not been released
-git+git://github.com/mitsuhiko/flask-openid.git@bf38a7376ae85fb62cf19a16ea7ec38966bc7347
+Flask>=0.9
+Flask-OpenID>=1.0.2
 pymongo==2.1
