@@ -1,7 +1,6 @@
 # order is important here
 from .helpers import LinkMap
 from .reading import Reading
-from .storage import MoreThanOneResultError, StorableItem
 from .user import User
 
 # flaskapp import required to be last since it depends on
@@ -9,6 +8,9 @@ from .user import User
 from .flaskapp import app, Application
 
 
-__all__ = ['app', 'Application', 'LinkMap', 'MoreThanOneResultError',
-        'Reading', 'StorableItem', 'Storage', 'User']
+class MoreThanOneResultError(Exception):
+    pass
+
+
+__all__ = ['app', 'Application', 'LinkMap', 'MoreThanOneResultError', 'Reading', 'User']
 

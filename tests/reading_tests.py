@@ -31,7 +31,13 @@ class ReadingTests(testing.TestCase):
         self.assertEqual(self.reading, self.user.readings[0])
 
     def test_reading_equals(self):
-        self.assertEqual(self.reading, readit.Reading('<Title>', '<Link>'))
+        self.assertEqual(self.reading, readit.Reading(
+                self.reading.title, self.reading.link))
+        self.assertNotEqual(self.reading, readit.Reading(
+                self.reading.title, '<Other Link>'))
+        self.assertNotEqual(self.reading, readit.Reading(
+                '<Other Title>', self.reading.link))
+        self.assertNotEqual(self.reading, None)
 
     def test_remove_reading(self):
         self.user.add_reading(self.reading)

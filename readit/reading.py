@@ -1,7 +1,4 @@
 import datetime
-import uuid
-
-from .storage import StorableItem
 
 
 class Reading(object):
@@ -90,6 +87,9 @@ class Reading(object):
         if other is None:
             return False
         return self.title == other.title and self.link == other.link
+
+    def __ne__(self, other):
+        return not self == other
 
     def __str__(self):
         return ('<Reading [id={0.object_id} title={0.title}, '

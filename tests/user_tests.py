@@ -78,6 +78,18 @@ class UserTests(testing.TestCase):
         self.assertEquals(self.user.object_id, '42')
         self.assertEquals(self.user.object_id, self.user.user_id)
 
+    def test_str_magic(self):
+        self.user.object_id = 'object id'
+        oid_details = mock.Mock()
+        oid_details.email = 'email address'
+        oid_details.identity_url = 'identity url'
+        self.user.login(oid_details)
+        s = str(self.user)
+        print s
+        self.assertIn(str(self.user.user_id), s)
+        self.assertIn(str(self.user.email), s)
+        self.assertIn(str(self.user.open_id), s)
+
 
 class StorableProtocolTests(testing.StorableItemTestCase):
     StorableClass = readit.User

@@ -42,7 +42,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Read It'
-copyright = u'2011, Dave Shawley'
+copyright = u'2011-2012, Dave Shawley'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -217,9 +217,9 @@ man_pages = [
 ]
 
 intersphinx_mapping = {
-        'http://docs.python.org/dev': None,
-        'http://flask.pocoo.org/docs': None,
-        'http://packages.python.org/Flask-OpenID': None,
-        'http://api.mongodb.org/python/current': None,
+        'http://docs.python.org/dev/': None,
+        'http://flask.pocoo.org/docs/': None,
+        'http://packages.python.org/Flask-OpenID/': None,
+        'http://api.mongodb.org/python/2.1/': None,
         }
 
