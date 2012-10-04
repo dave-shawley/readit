@@ -12,5 +12,6 @@ class MoreThanOneResultError(Exception):
     pass
 
 
-__all__ = ['app', 'Application', 'LinkMap', 'MoreThanOneResultError', 'Reading', 'User']
+__all__ = ['app', 'Application', 'LinkMap', 'MoreThanOneResultError',
+           'Reading', 'User']
 

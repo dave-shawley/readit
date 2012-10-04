@@ -10,8 +10,6 @@ instances in the first place.
 """
 import uuid
 
-import readit
-
 
 class User(object):
     """I represent a user that is registered in the system.

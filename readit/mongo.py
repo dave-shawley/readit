@@ -61,7 +61,8 @@ class Storage(object):
     def save(self, storage_bin, storable):
         """Save *storable* into the data subset *storage_bin*.
         :param storage_bin: the namespace to store the object in.
-        :param storable: the object to save.  This object may be modified before returning.
+        :param storable: the object to save.  This object may be modified
+        before returning.
 
         The property set to store as a Mongo document is derived by calling
         :py:meth:`to_persistence` method.  Then if *storable* has a property

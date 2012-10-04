@@ -3,7 +3,6 @@ Pluggable JSON Support Layer
 ============================
 """
 import datetime
-import time
 
 import flask
 import readit
@@ -27,10 +26,10 @@ class JSONEncoder(flask.json.JSONEncoder):
     def __init__(self, *args, **kwds):
         super(JSONEncoder, self).__init__(*args, **kwds)
         self.json_encoders = [
-                DateTimeJSONSupport(),
-                ObjectIdJSONSupport(),
-                ReadingSupport(),
-                ]
+            DateTimeJSONSupport(),
+            ObjectIdJSONSupport(),
+            ReadingSupport(),
+        ]
 
     def default(self, o):
         for supporter in self.json_encoders:

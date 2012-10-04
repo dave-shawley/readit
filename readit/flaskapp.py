@@ -191,7 +191,8 @@ def initialize_user():
 def setup_storage():
     if not hasattr(flask.g, 'db'):
         import readit.mongo
-        flask.g.db = readit.mongo.Storage(storage_url=app.config['STORAGE_URL'])
+        flask.g.db = readit.mongo.Storage(
+            storage_url=app.config['STORAGE_URL'])
 
 
 @app.route('/')
@@ -223,7 +224,7 @@ def login():
             return app.openid.try_login(openid,
                     ask_for=['email', 'fullname', 'nickname'])
         raise werkzeug.exceptions.InternalServerError(
-                'POST missing openid parameter')
+            'POST missing openid parameter')
     next_arg = next_arg or flask.url_for('root')
     return flask.render_template('login.html', next=next_arg)
 
@@ -280,7 +281,7 @@ def add_reading(session_key):
         return app.jsonify({'actions': app.links, 'new_reading': reading})
     except KeyError, exc:
         raise werkzeug.exceptions.BadRequest(
-                '{0} is a required field'.format(exc))
+            '{0} is a required field'.format(exc))
 
 
 @app.route('/<session_key>/readings/<reading_id>', methods=['DELETE'])
