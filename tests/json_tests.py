@@ -68,7 +68,6 @@ class JSONTests(TestCase):
         a_reading = readit.Reading(title='Title', link='Link')
         a_reading.object_id = pymongo.objectid.ObjectId()
         json_str = self.encoder.encode(a_reading)
-        print json_str
         value = self.decoder.decode(json_str)
         self.assertEquals(value['__class__'], 'readit.Reading')
         self.assertEquals(value['title'], a_reading.title)

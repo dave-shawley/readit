@@ -28,7 +28,7 @@ import functools
 import os
 
 import flask
-import flaskext.openid
+import flask.ext.openid
 import werkzeug.exceptions
 
 import readit
@@ -51,7 +51,7 @@ class Application(flask.Flask, readit.LinkMap):
         readit.LinkMap.__init__(self)
         self.config['SECRET_KEY'] = os.urandom(24)
         self.load_configuration()
-        self.oid = flaskext.openid.OpenID(self)
+        self.oid = flask.ext.openid.OpenID(self)
         self.oid.after_login(self._login_succeeded)
         self.oid.errorhandler(self._report_openid_error)
 
@@ -66,7 +66,7 @@ class Application(flask.Flask, readit.LinkMap):
 
     @property
     def openid(self):
-        """The :py:class:`flaskext.openid.OpenID` instance that is bound to
+        """The :py:class:`flask.ext.openid.OpenID` instance that is bound to
         the application.  Use this to establish Open ID login handlers."""
         return self.oid
 
