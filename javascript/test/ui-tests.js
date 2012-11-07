@@ -18,7 +18,7 @@ $(document).ready(function() {
 
 	test("Cloned reading is cleaned", function() {
 		var r = readit();
-		r.readings = [ createReading("1") ];
+		r.readings = [ createReading("1"), createReading("2") ];
 		r.update();
 		var $clonedItem = $("#" + r.readings[0].id);
 		equal($clonedItem.length, 1, "item was cloned with reading id");

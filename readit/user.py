@@ -181,7 +181,7 @@ class User(object):
     def object_id(self, value):
         self.user_id = str(value)
 
-    def str(self):
-        return (r'user <{0.user_id}, email={0.email}, ' +
+    def __str__(self):
+        return (r'user <{0.user_id}, email={0.email}, '
                 r'open_id={0.open_id}>'.format(self))
 

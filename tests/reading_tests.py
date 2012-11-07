@@ -64,6 +64,14 @@ class ReadingTests(testing.TestCase):
         now -= datetime.timedelta(microseconds=now.microsecond)
         self.assertEquals(now, self.reading.when)
 
+    def test_equality_defined_by_title_and_link(self):
+        another_reading = readit.Reading(self.reading.title, self.reading.link)
+        self.assertEquals(self.reading, another_reading)
+
+    def test_expected_equality_cases(self):
+        self.assertEquals(self.reading, self.reading)
+        self.assertNotEquals(self.reading, None)
+
 
 class StorableProtocolTests(testing.StorableItemTestCase):
     StorableClass = readit.Reading
