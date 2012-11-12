@@ -71,7 +71,10 @@
         var updateUiForReading = function($uiElement, aReading) {
             $uiElement.find(sel.title).text(aReading.title);
             $uiElement.find(sel.when).text(aReading.when.toDateString());
-            $uiElement.find(sel.link).prop("href", aReading.link);
+            $uiElement.find(sel.link).prop({
+            	"href": aReading.link,
+            	"rel": "external"
+			});
             $uiElement.find(sel.url).text(aReading.link);
         };
 
@@ -134,7 +137,7 @@
 				dataType: "json",
 				contentType: "application/json;charset=UTF-8",
 				success: function (data) {
-					debugMessage("success", data);
+					debugMessage("addReading() success", data);
 					if (!wasRedirected(data)) {
 						that.readings.push(new Reading(data.new_reading));
 						that.update();
