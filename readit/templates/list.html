@@ -14,6 +14,7 @@
     src="/js/readit.js">
     </script>
   <script type="text/javascript">
+
     $(document).ready(function() {
       document.jqt = new $.jQTouch({});
       document.readit = readit({
@@ -30,6 +31,10 @@
       document.readit.fetchReadings();
 
       $("#addbutton").click(function (event) {
+        $("#readingform")[0].reset();
+      });
+
+      $("#savebutton").click(function (event) {
         var $reading = $("#readingform");
         event.preventDefault();
         document.readit.addReading(
@@ -66,6 +71,7 @@
         "text-align": "left"
       });
     });
+
   </script>
 {% endblock %}
 
@@ -83,7 +89,7 @@
       </a>
     </li>
   </ul>
-  <a class="whiteButton" href="#addreading">Add a Reading</a>
+  <a class="whiteButton" id="addbutton" href="#addreading">Add a Reading</a>
   <a class="whiteButton" id="refreshbutton" href="#">Refresh</a>
 </div>
 
@@ -118,7 +124,7 @@
     </ul>
     <ul class="individual">
       <li><a href="#list" class="goback">Cancel</a></li>
-      <li><a id="addbutton" href="#">Add</a></li>
+      <li><a id="savebutton" href="#">Save</a></li>
     </ul>
   </form>
 </div>

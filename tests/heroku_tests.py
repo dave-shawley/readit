@@ -59,7 +59,7 @@ class HerokuTests(ReaditTestCase):
         os.environ['DEBUG'] = 'Yes'
         readit.app = readit.app.__class__()
         readit.app.run()
-        flask_run.assert_called_once_with(readit.app,
+        flask_run.assert_called_once_with(
                 host='server.example.com', port=int(os.environ['PORT']),
                 debug=True)
 
@@ -67,7 +67,7 @@ class HerokuTests(ReaditTestCase):
     def test_keyword_args(self, flask_run):
         readit.app = readit.app.__class__()
         readit.app.run(host='my.host', port=6543, debug='SENTINEL')
-        flask_run.assert_called_once_with(readit.app,
+        flask_run.assert_called_once_with(
                 host='my.host', port=6543, debug='SENTINEL')
 
     @mock.patch('flask.Flask.run')
@@ -77,6 +77,6 @@ class HerokuTests(ReaditTestCase):
         os.environ['DEBUG'] = 'No'
         readit.app = readit.app.__class__()
         readit.app.run(host='my.host', port=6543, debug='SENTINEL')
-        flask_run.assert_called_once_with(readit.app,
+        flask_run.assert_called_once_with(
                 host='my.host', port=6543, debug='SENTINEL')
 

@@ -28,14 +28,15 @@ import functools
 import os
 
 import flask
-import flaskext.openid
+import flask.ext.openid
+import flask.ext.heroku_runner
 import werkzeug.exceptions
 
 import readit
 import readit.json_support
 
 
-class Application(flask.Flask, readit.LinkMap):
+class Application(flask.ext.heroku_runner.HerokuApp, readit.LinkMap):
     """I extend :py:class:`flask.Flask` to add Open ID tracking and use
     :py:class:`LinkMap` to provide a list of actions.
     
@@ -47,11 +48,11 @@ class Application(flask.Flask, readit.LinkMap):
     JAVASCRIPT_DEBUG_FILE_LIFETIME = 60
 
     def __init__(self):
-        flask.Flask.__init__(self, __package__)
+        super(Application, self).__init__(__package__)
         readit.LinkMap.__init__(self)
         self.config['SECRET_KEY'] = os.urandom(24)
         self.load_configuration()
-        self.oid = flaskext.openid.OpenID(self)
+        self.oid = flask.ext.openid.OpenID(self)
         self.oid.after_login(self._login_succeeded)
         self.oid.errorhandler(self._report_openid_error)
 
@@ -66,7 +67,7 @@ class Application(flask.Flask, readit.LinkMap):
 
     @property
     def openid(self):
-        """The :py:class:`flaskext.openid.OpenID` instance that is bound to
+        """The :py:class:`flask.ext.openid.OpenID` instance that is bound to
         the application.  Use this to establish Open ID login handlers."""
         return self.oid
 
@@ -108,12 +109,6 @@ class Application(flask.Flask, readit.LinkMap):
             if filename.lower().endswith('.js'):
                 return self.JAVASCRIPT_DEBUG_FILE_LIFETIME
         return super(Application, self).get_send_file_max_age(filename)
-
-    def run(self, **args):
-        args.setdefault('host', self.config['HOST'])
-        args.setdefault('port', int(self.config['PORT']))
-        args.setdefault('debug', self.config['DEBUG'])
-        flask.Flask.run(self, **args)
 
     def jsonify(self, obj):
         """JSONify an object using the

@@ -1,3 +1,4 @@
 Flask>=0.9
 Flask-OpenID>=1.0.2
+Flask-Heroku-Runner
 pymongo==2.1
