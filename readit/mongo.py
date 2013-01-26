@@ -34,6 +34,7 @@ transformation to and from Mongo documents.
 """
 from __future__ import with_statement
 
+import logging
 import pymongo
 import threading
 
@@ -54,9 +55,10 @@ class Storage(object):
     _CONN = None
     _CONN_LOCK = threading.Lock()
 
-    def __init__(self, storage_url=None, id_extractor=None):
+    def __init__(self, storage_url=None, id_extractor=None, logger=None):
         self.storage_url = storage_url
         self.id_extractor = id_extractor
+        self.logger = logger or logging.getLogger('readit.mongo')
 
     def save(self, storage_bin, storable):
         """Save *storable* into the data subset *storage_bin*.
@@ -89,12 +91,14 @@ class Storage(object):
         return result[0]
 
     def retrieve(self, storage_bin, storage_id=None, clazz=None, **constraint):
+        self.logger.debug('looking up %s in %s', constraint, storage_bin)
         conn = self.get_mongo_connection()
         if storage_id is not None:
             constraint['_id'] = ObjectId(storage_id)
-        values = conn[storage_bin].find(**constraint)
+        values = conn[storage_bin].find(constraint)
         if values and clazz:
             def manufacture_object(data):
+                self.logger.debug('found %s', data)
                 object_id = data.pop('_id')
                 instance = clazz.from_persistence(data)
                 instance.object_id = str(object_id)

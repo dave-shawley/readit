@@ -1,5 +1,6 @@
 from __future__ import with_statement
 
+import logging
 import os
 import os.path
 import re
@@ -7,6 +8,7 @@ import urllib
 
 import flask
 import mock
+import werkzeug.exceptions
 
 import readit
 
@@ -40,8 +42,7 @@ class LoginTests(ReaditTestCase):
         open_id.try_login.return_value = 'Open ID return value'
         readit.app.oid = open_id
         rv = self.client.post('/login', data={
-            'openid': 'Open ID input value',
-            })
+            'openid': 'Open ID input value'})
         self.assertEquals(rv.data, 'Open ID return value')
         open_id.get_next_url.return_value = 'http://next.url/'
         with readit.app.test_request_context('/'):
@@ -95,13 +96,37 @@ class LoginTests(ReaditTestCase):
                     self.fake_user.user_id)
 
     @mock.patch(STORAGE_CLASS)
-    def test_login_fails_for_unknown_user(self, storage_class):
+    def test_login_succeeded_throws_when_user_not_found(self, storage_class):
+        """Tests that _login_succeeded raises an exception with the
+        appropriate attributes set.  The error handling templates depend
+        on the attributes."""
         storage = storage_class.return_value
         storage.retrieve_one.return_value = None
         with readit.app.test_request_context('/'):
             readit.app.preprocess_request()
-            rv = readit.app._login_succeeded(self.fake_oid_details)
-            self.assertEquals(404, rv.status_code)
+            try:
+                readit.app._login_succeeded(self.fake_oid_details)
+            except Exception, exc:
+                self.assertIsInstance(exc, werkzeug.exceptions.NotFound)
+                self.assertEquals(exc.identity_url,
+                        self.fake_oid_details.identity_url)
+                self.assertEquals(exc.email, self.fake_oid_details.email)
+
+    @mock.patch(STORAGE_CLASS)
+    def test_login_with_unknown_user_triggers_404(self, storage_class):
+        with readit.app.test_request_context('/'):
+            readit.app.preprocess_request()
+            storage = storage_class.return_value
+            storage.retrieve_one.return_value = None
+            response = mock.Mock()
+            
+            def side_effect(*args, **keywords):
+                readit.app._login_succeeded(response)
+            open_id = mock.Mock()
+            open_id.try_login.side_effect = side_effect
+            readit.app.oid = open_id
+            rsp = self.client.post('/login', data={'openid': '<OpenId>'})
+            self.assertEquals(404, rsp.status_code)
 
     def test_openid_failure_triggers_500(self):
         with readit.app.test_request_context('/'):
@@ -129,8 +154,7 @@ class ApplicationTests(ReaditTestCase):
         self.assertEquals(rv.status_code, 200)
         last_mod = rv.headers['last-modified']
         rv = self.client.get('/favicon.ico', headers=[
-            ('if-modified-since', last_mod),
-            ])
+            ('if-modified-since', last_mod)])
         self.assertEquals(rv.status_code, 304)
 
     def test_cache_timeout_override(self):
@@ -157,8 +181,7 @@ class ApplicationTests(ReaditTestCase):
     def test_reading_list_as_html(self):
         self.load_session(session_key=self.session_key)
         rv = self.client.get(self.get_session_url_for('/readings'), headers=[
-                ('Accept', 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8')
-            ])
+            ('Accept', 'text/html,application/xhtml+xml;q=0.9,*/*;q=0.8')])
         self.assertEquals(rv.status_code, 200)
         self.assertEquals(rv.mimetype, 'text/html')
 
@@ -168,8 +191,7 @@ class ApplicationTests(ReaditTestCase):
         storage.retrieve.return_value = {'readings': {}}
         self.load_session(session_key=self.session_key)
         rv = self.client.get(self.get_session_url_for('/readings'), headers=[
-                ('Accept', 'application/json,text/javascript,*/*;q=0.1')
-            ])
+            ('Accept', 'application/json,text/javascript,*/*;q=0.1')])
         self.assertEquals(rv.status_code, 200)
         self.assertEquals(rv.mimetype, 'application/json')
 
@@ -198,7 +220,7 @@ class ApplicationTests(ReaditTestCase):
         with readit.app.test_request_context('/'):
             readit.app.preprocess_request()
             data = '{{"title":"{0}","link":"{1}"}}'.format(
-                    reading_obj.title, reading_obj.link)
+                reading_obj.title, reading_obj.link)
             rsp = self.client.post(reading_link, data=data,
                     content_type='application/json')
             self.assert_is_http_success(rsp)
@@ -249,5 +271,23 @@ class ApplicationTests(ReaditTestCase):
         with readit.app.test_request_context(request_url):
             readit.app.preprocess_request()
             self.client.get(request_url)
-            storage_class.assert_called_with(storage_url='<MongoStorageUrl>')
+            self.assertTrue(storage_class.called)
+            positional, keywords = storage_class.call_args
+            self.assertEqual(keywords['storage_url'], '<MongoStorageUrl>')
+
+    @mock.patch(STORAGE_CLASS)
+    def test_storage_layer_passed_a_logger(self, storage_class):
+        readit.app.load_configuration()
+        storage = storage_class.return_value
+        storage.retrieve.return_value = {'readings': {}}
+        self.load_session(session_key=self.session_key)
+        request_url = self.get_session_url_for('/readings')
+        with readit.app.test_request_context(request_url):
+            readit.app.preprocess_request()
+            self.client.get(request_url)
+            self.assertTrue(storage_class.called)
+            positional, keywords = storage_class.call_args
+            logger = keywords['logger']
+            self.assertIsInstance(logger, logging.Logger)
+            self.assertIs(logger.parent, readit.app.logger)
 

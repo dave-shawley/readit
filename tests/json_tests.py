@@ -37,13 +37,13 @@ class JSONTests(TestCase):
 
     def test_basic_encode_decode(self):
         objects = [
-                {'one': 1, 'two': 2},
-                [1, 2, 3],
-                'simple string',
-                u'unicode string',
-                42,
-                22.7
-                ]
+            {'one': 1, 'two': 2},
+            [1, 2, 3],
+            'simple string',
+            u'unicode string',
+            42,
+            22.7
+        ]
         for obj in objects:
             json_str = self.encoder.encode(obj)
             result = self.decoder.decode(json_str)
@@ -72,6 +72,6 @@ class JSONTests(TestCase):
         self.assertEquals(value['__class__'], 'readit.Reading')
         self.assertEquals(value['title'], a_reading.title)
         self.assertEquals(value['link'], a_reading.link)
-        self.assertEquals(value['when'], a_reading.when.isoformat()+'Z')
+        self.assertEquals(value['when'], a_reading.when.isoformat() + 'Z')
         self.assertEquals(value['object_id'], str(a_reading.object_id))
 

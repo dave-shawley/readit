@@ -11,6 +11,9 @@
       $("#google").click(function () {
         loginWith("http://www.google.com/accounts/o8/id");
       });
+      $("#yahoo").click(function () {
+        loginWith("http://yahoo.com");
+      });
       $("#myopenidlogin").click(function () {
         loginWith("http://" + $("#myopeniduser").val() + ".myopenid.com/");
       });
@@ -44,6 +47,9 @@
   <ul class="rounded">
     <li class="forward">
       <a id="google" href="#">Google</a>
+    </li>
+    <li class="forward">
+      <a id="yahoo" href="#">Yahoo</a>
     </li>
     <li class="arrow" id="showmyopenid">
       <a href="#myopenid">My Open ID</a>

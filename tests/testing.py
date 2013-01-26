@@ -42,7 +42,7 @@ if major < 2 or (major == 2 and minor < 7):
                 except AttributeError:
                     exc_name = str(self.expected)
                 raise self.failureException(
-                        "{0} not raised".format(exc_name))
+                    "{0} not raised".format(exc_name))
             if not issubclass(exc_type, self.expected):
                 return False  # unexpected exceptions handled elsewhere
             self.exception = exc_value  # stash this away
@@ -222,4 +222,23 @@ def skipped(f):
     def wrapper(*args):
         print '***', 'IGNORING', f.__module__ + '.' + f.__name__
     return wrapper
+
+
+def expect_exception(exc_type):
+    """Wrap a test case that raises a specific exception type."""
+    def decorator(test_case):
+        @functools.wraps(test_case)
+        def wrapper(self, *pos, **kwds):
+            try:
+                test_case(self, *pos, **kwds)
+            except Exception, exc:
+                if not isinstance(exc, exc_type):
+                    raise AssertionError(
+                        'expected exception of type %s, got %s' % (
+                            exc_type, exc.__class__))
+                return
+            raise AssertionError(
+                'expected exception of type %s, none raised' % exc_type)
+        return wrapper
+    return decorator
 

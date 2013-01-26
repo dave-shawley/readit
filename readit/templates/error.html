@@ -1,0 +1,19 @@
+<!-- vim: set ts=2 sts=2 sw=2 et: -->
+{% extends "layout.html" %}
+{% block head %}
+<style type="text/css">
+span.dt { font-weight: bold;}
+span.content { font-size: smaller; }
+</style>
+{% endblock %}
+{% block body %}
+<div id="main" class="current">
+  <div class="toolbar"><h1>Error</h1></div>
+  <ul class="rounded">
+    <li><span class="dt">Error:</span>   <span class="content">{{ error.description }}</span></li>
+    <li><span class="dt">E-Mail:</span>  <span class="content">{{ error.email }}</span></li>
+    <li><span class="dt">Open ID:</span> <span class="content">{{ error.identity_url }}</span></li>
+  </ul>
+  <a class="whiteButton" href="{{ url_for('login') }}">Login</a>
+</div>
+{% endblock %}

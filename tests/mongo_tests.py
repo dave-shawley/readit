@@ -33,7 +33,7 @@ class MongoTestCase(TestCase):
 
     def setUp(self):
         self.storage_id = ''.join(('{:02x}'.format(ord(x))
-                                        for x in os.urandom(12)))
+                                   for x in os.urandom(12)))
         self.storage = readit.mongo.Storage()
         self.collection = mock.MagicMock()
         self.cursor = mock.Mock()
@@ -102,8 +102,8 @@ class MongoRetrieveTests(MongoTestCase):
         self.storage.retrieve(self.BIN_NAME, storage_id=self.storage_id,
                 clazz=TestStorable, **args)
         self.assertMongoCollectionWas(self.BIN_NAME)
-        self.cursor.find.assert_called_with(_id=ObjectId(self.storage_id),
-                **args)
+        args['_id'] = ObjectId(self.storage_id)
+        self.cursor.find.assert_called_with(args)
 
     @mock.patch(CONNECTION_CLASS)
     def test_retrieve_one_fails_for_multiple_results(self, mongo_conn_class):
@@ -119,15 +119,15 @@ class MongoRetrieveTests(MongoTestCase):
         first_object_id, second_object_id = ObjectId(), ObjectId()
         self.build_mongo_connection(mongo_conn_class)
         self.cursor.find.return_value = [
-                {'_id': first_object_id, 'name': 'first object'},
-                {'_id': second_object_id, 'name': 'second object'},
-                ]
+            {'_id': first_object_id, 'name': 'first object'},
+            {'_id': second_object_id, 'name': 'second object'},
+        ]
         
         result = self.storage.retrieve(self.BIN_NAME,
                 storage_id=self.storage_id, clazz=TestStorable)
         
         self.assertMongoCollectionWas(self.BIN_NAME)
-        self.cursor.find.assert_called_with(_id=ObjectId(self.storage_id))
+        self.cursor.find.assert_called_with({'_id': ObjectId(self.storage_id)})
         self.assertEquals(len(result), 2)
         self.assertEquals(result[0].object_id, str(first_object_id))
         self.assertEquals(result[0].attributes['name'], 'first object')
@@ -142,7 +142,7 @@ class MongoRetrieveTests(MongoTestCase):
         result = self.storage.retrieve_one(self.BIN_NAME,
                 storage_id=self.storage_id, clazz=TestStorable)
         self.assertMongoCollectionWas(self.BIN_NAME)
-        self.cursor.find.assert_called_with(_id=ObjectId(self.storage_id))
+        self.cursor.find.assert_called_with({'_id': ObjectId(self.storage_id)})
         self.assertEquals(result.object_id, str(oid))
         self.assertEquals(result.attributes['name'], 'value')
 

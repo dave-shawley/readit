@@ -36,6 +36,15 @@ import readit
 import readit.json_support
 
 
+class UserNotFoundException(werkzeug.exceptions.NotFound):
+    """Raise an instance of me whenever you fail to find a user."""
+    def __init__(self, oid_response, *args, **kwds):
+        super(UserNotFoundException, self).__init__(
+            'User Not Found', *args, **kwds)
+        self.identity_url = getattr(oid_response, 'identity_url')
+        self.email = getattr(oid_response, 'email')
+
+
 class Application(flask.ext.heroku_runner.HerokuApp, readit.LinkMap):
     """I extend :py:class:`flask.Flask` to add Open ID tracking and use
     :py:class:`LinkMap` to provide a list of actions.
@@ -71,7 +80,7 @@ class Application(flask.ext.heroku_runner.HerokuApp, readit.LinkMap):
         the application.  Use this to establish Open ID login handlers."""
         return self.oid
 
-    # @openid.after_login
+    # registered as @openid.after_login
     def _login_succeeded(self, response):
         result = flask.g.db.retrieve_one('users', email=response.email,
                 clazz=readit.User)
@@ -87,9 +96,9 @@ class Application(flask.ext.heroku_runner.HerokuApp, readit.LinkMap):
             return flask.redirect(next)
         self.logger.error('failed to find user for identity %s',
                 response.identity_url)
-        return flask.Response(status=404)
+        raise UserNotFoundException(response)
 
-    # @openid.errorhandler
+    # registered as @openid.errorhandler
     def _report_openid_error(self, message):
         self.logger.error('Open ID Error [%s]', message, exc_info=1)
         raise werkzeug.exceptions.InternalServerError('Open ID Failure')
@@ -187,7 +196,8 @@ def setup_storage():
     if not hasattr(flask.g, 'db'):
         import readit.mongo
         flask.g.db = readit.mongo.Storage(
-            storage_url=app.config['STORAGE_URL'])
+            storage_url=app.config['STORAGE_URL'],
+            logger=app.logger.getChild('storage'))
 
 
 @app.route('/')
@@ -284,4 +294,11 @@ def remove_reading(session_key, reading_id):
     flask.g.db.remove('readings', flask.g.user.user_id, _id=reading_id)
     return flask.Response(status=204)
 
+
+@app.errorhandler(404)
+def user_not_found_handler(error):
+    response = flask.make_response(flask.render_template(
+        'error.html', error=error))
+    response.status = '%d %s' % (error.code, error.description)
+    return response
 

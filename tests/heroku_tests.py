@@ -60,15 +60,15 @@ class HerokuTests(ReaditTestCase):
         readit.app = readit.app.__class__()
         readit.app.run()
         flask_run.assert_called_once_with(
-                host='server.example.com', port=int(os.environ['PORT']),
-                debug=True)
+            host='server.example.com', port=int(os.environ['PORT']),
+            debug=True)
 
     @mock.patch('flask.Flask.run')
     def test_keyword_args(self, flask_run):
         readit.app = readit.app.__class__()
         readit.app.run(host='my.host', port=6543, debug='SENTINEL')
         flask_run.assert_called_once_with(
-                host='my.host', port=6543, debug='SENTINEL')
+            host='my.host', port=6543, debug='SENTINEL')
 
     @mock.patch('flask.Flask.run')
     def test_keyword_args_override_env_vars(self, flask_run):
@@ -78,5 +78,5 @@ class HerokuTests(ReaditTestCase):
         readit.app = readit.app.__class__()
         readit.app.run(host='my.host', port=6543, debug='SENTINEL')
         flask_run.assert_called_once_with(
-                host='my.host', port=6543, debug='SENTINEL')
+            host='my.host', port=6543, debug='SENTINEL')
 
