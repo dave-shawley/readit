@@ -180,6 +180,10 @@ class StorableItemTestCase(TestCase, object):
 
     def setUp(self):
         self.storable = self.create_storable_instance()
+        self.assertIsInstance(self.storable, self.StorableClass)
+        for reqd_attr in self.REQUIRED_ATTRIBUTES:
+            self.assertIsNotNone(getattr(self.storable, reqd_attr),
+                reqd_attr + ' should not be None in test instance')
 
     def test_storable_protocol_implemented(self):
         self.storable.object_id = '<ThisValueIsIgnored>'
@@ -212,6 +216,9 @@ class StorableItemTestCase(TestCase, object):
                 self.StorableClass.from_persistence(persist)
 
     def create_storable_instance(self):
+        """Subclasses are required to implement this.  It is required to answer
+        with an instance of ``StorableClass`` that sets the attributes listed
+        in ``REQUIRED_ATTRIBUTES``."""
         raise NotImplementedError('create_storable_instance is not '
                 + 'implemented by ' + str(self.__class__))
 

@@ -65,7 +65,7 @@ class UserTests(testing.TestCase):
         self.user.login(oid_details)
         self.assertTrue(self.user.display_name, 'full name')
 
-    def test_user_id_property(self):
+    def test_login_does_not_change_user_id(self):
         self.assertIsNone(self.user.user_id)
         self.user.user_id = mock.sentinel.user_id
         oid_details = mock.Mock()
@@ -73,7 +73,7 @@ class UserTests(testing.TestCase):
         self.user.login(oid_details)
         self.assertEquals(self.user.user_id, mock.sentinel.user_id)
 
-    def test_object_id_property(self):
+    def test_object_id_is_user_id(self):
         self.user.object_id = 42  # this will be stringified
         self.assertEquals(self.user.object_id, '42')
         self.assertEquals(self.user.object_id, self.user.user_id)
