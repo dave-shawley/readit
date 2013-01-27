@@ -13,7 +13,23 @@ class Reading(object):
     ('<Title>', '<Link>')
     >>> r == Reading('<Title>', '<Link>')
     True
-    
+
+    My ``user_id`` attribute is used to tie this reading instance with a
+    specific user.  After all, my primary purpose is to associated a user
+    with something that was read.  Since this is persisted, I need to
+    guarantee that the value is round-trippable through the persistence
+    layer so I coerce it to a string before passing it along.  You shouldn't
+    need to concern yourself with this implementation detail unless you
+    plan on comparing my ``user_id`` attribute to something.
+
+    >>> r = Reading('<Title>', '<Link>')
+    >>> any_instance = object()
+    >>> r.user_id = any_instance
+    >>> r.user_id != any_instance
+    True
+    >>> r.user_id == str(any_instance)
+    True
+
     The other interesting property of an item that the user has read is
     when it was read.  This is tracked by my ``when`` attribute which is
     a :py:class:`~datetime.datetime` instance but can specified as a
@@ -49,7 +65,7 @@ class Reading(object):
     def __init__(self, title=None, link=None, when=None, user=None):
         super(Reading, self).__init__()
         self.object_id = None
-        self.user_id = None
+        self._user_id = None
         self.title = title
         self.link = link
         self.when = when or datetime.datetime.utcnow()
@@ -67,9 +83,20 @@ class Reading(object):
             value = datetime.datetime.strptime(dt_string, '%Y-%m-%dT%H:%M:%S')
         self._when = value - datetime.timedelta(microseconds=value.microsecond)
 
+    @property
+    def user_id(self):
+        return self._user_id
+
+    @user_id.setter
+    def user_id(self, value):
+        if value is None:
+            self._user_id = None
+        else:
+            self._user_id = str(value)
+
     def to_persistence(self):
         return {'title': self.title, 'link': self.link, 'when': self.when,
-                'user_id': self.user_id}
+                'user_id': self._user_id}
     
     @classmethod
     def from_persistence(clazz, persist_dict):
@@ -78,7 +105,7 @@ class Reading(object):
         instance.title = persist_dict['title']
         instance.link = persist_dict['link']
         instance.when = persist_dict['when']
-        instance.user_id = persist_dict['user_id']
+        instance._user_id = persist_dict['user_id']
         return instance
 
     def __eq__(self, other):
