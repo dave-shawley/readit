@@ -134,8 +134,9 @@ class User(object):
 
     @property
     def readings(self):
-        """Returns the list of things that this user has read."""
-        return list(self._readings)
+        """Answers the list of things that this user has read in
+        chronological order starting with the most recently read item."""
+        return sorted(self._readings, key=lambda r: r.when, reverse=True)
 
     def add_reading(self, reading):
         """Appends an item to the list of things that this user has read."""

@@ -93,6 +93,11 @@ class HttpTestHelper(TestCase):
     def __init__(self, *args, **kwds):
         TestCase.__init__(self, *args, **kwds)
 
+    def create_failure_side_effect(self, message):
+        def throw_exception(*args, **ignored):
+            raise Exception(message)
+        return throw_exception
+
     def should_not_be_called(self, mock, method_name):
         """Configure a method on a mock that will throw an exception
         if it is called.
@@ -100,11 +105,10 @@ class HttpTestHelper(TestCase):
         :param mock.Mock mock: the mock object to add the method to
         :param str method_name: the name of the method to add
         """
-        def throw_exception():
-            raise Exception(method_name + ' should not be called')
         method_mock = getattr(mock, method_name)
-        method_mock.side_effect = Exception(method_name +
-                ' should not be called')
+        method_mock.side_effect = self.create_failure_side_effect(
+            method_name + ' should not be called'
+        )
 
     def assert_is_http_success(self, response):
         status = self._get_status_code(response)
@@ -227,7 +231,7 @@ def skipped(f):
     """Make unittest skip the decorated function."""
     @functools.wraps(f)
     def wrapper(*args):
-        print '***', 'IGNORING', f.__module__ + '.' + f.__name__
+        sys.stderr.write('*** IGNORING %s.%s\n' % (f.__module__, f.__name__))
     return wrapper
 
 

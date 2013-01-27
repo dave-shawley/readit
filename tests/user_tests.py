@@ -1,3 +1,4 @@
+import datetime
 import os
 
 import mock
@@ -85,11 +86,21 @@ class UserTests(testing.TestCase):
         oid_details.identity_url = 'identity url'
         self.user.login(oid_details)
         s = str(self.user)
-        print s
         self.assertIn(str(self.user.user_id), s)
         self.assertIn(str(self.user.email), s)
         self.assertIn(str(self.user.open_id), s)
 
+    def test_readings_are_ordered_by_time(self):
+        now = datetime.datetime.utcnow()
+        yesterday = now - datetime.timedelta(days=1)
+        tomorrow = now + datetime.timedelta(days=1)
+        self.user.add_reading(readit.Reading('title 1', when=yesterday))
+        self.user.add_reading(readit.Reading('title 2', when=tomorrow))
+        self.user.add_reading(readit.Reading('title 3', when=now))
+        self.assertListEqual(
+            [r.title for r in self.user.readings],
+            ['title 2', 'title 3', 'title 1']
+        )
 
 class StorableProtocolTests(testing.StorableItemTestCase):
     StorableClass = readit.User

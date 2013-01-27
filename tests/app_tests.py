@@ -12,7 +12,7 @@ import werkzeug.exceptions
 
 import readit
 
-from .testing import ReaditTestCase
+from .testing import skipped, ReaditTestCase
 
 
 #  Change this to the class that should be patched for storage
@@ -207,6 +207,23 @@ class ApplicationTests(ReaditTestCase):
             self.client.get(reading_link, headers=headers)
             storage.retrieve.assert_called_with('readings',
                     user_id='<UserId>', clazz=readit.Reading)
+
+    @skipped
+    @mock.patch(STORAGE_CLASS)
+    def test_readings_retrieved_through_user(self, storage_class):
+        storage_class.side_effect = self.create_failure_side_effect(
+            STORAGE_CLASS + ' should not be created'
+        )
+        reading_link = self.get_session_url_for('/readings')
+        headers = [('Accept', 'application/json')]
+        self.load_session(session_key=self.session_key, user_id='<UserId>')
+        with readit.app.test_request_context(reading_link):
+            readit.app.preprocess_request()
+            a_user = mock.Mock()
+            a_user.user_id = '<UserId>'
+            a_user.readings.return_value = []
+            self.client.get(reading_link, headers=headers)
+            a_user.readings.assert_called_with()
 
     @mock.patch(STORAGE_CLASS)
     def test_add_json_reading(self, storage_class):
