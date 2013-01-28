@@ -2,13 +2,13 @@
 <html>
 	<head>
 		<title>Read It JavaScript Unit Tests</title>
-		<link rel=stylesheet href="test/ext/qunit.css" type="text/css">
+		<link rel=stylesheet href="http://code.jquery.com/qunit/qunit-1.11.0.css" type="text/css">
 		<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.js"></script>
 		<script type="text/javascript" src="stdlib.js"></script>
 		<script type="text/javascript" src="readit.js"></script>
 
 		<script type="text/javascript" src="test/lib/ajaxmock.js"></script>
-		<script type="text/javascript" src="test/ext/qunit.js"></script>
+		<script type="text/javascript" src="http://code.jquery.com/qunit/qunit-1.11.0.js"></script>
 		<script type="text/javascript" src="test/lib/startup.js"></script>
 		<script type="text/javascript" src="test/lib/helpers.js"></script>
 
@@ -16,14 +16,22 @@
 		<script type="text/javascript" src="test/object-tests.js"></script>
 		<script type="text/javascript" src="test/ui-tests.js"></script>
 		<script type="text/javascript" src="test/stdlib-tests.js"></script>
+
+		<script type="text/javascript">
+			// This is executed AFTER all of the unit tests are done.  If we are running
+			// inside of the most excellent JSCover server, then this will generate a
+			// coverage report to our report directory.
+			QUnit.done(function() {
+				if (window.jscoverage_report) {
+					console.log("generated JSCover report");
+					window.jscoverage_report();
+				}
+			});
+		</script>
 	</head>
 	<body>
-		<h1 id="qunit-header"></h1>
-		<h1 id="qunit-banner"></h1>
-		<h1 id="qunit-userAgent"></h1>
-		<h1 id="qunit-tests"></h1>
-
-		<div id="qunit-fixture" style="display:none">
+		<div id="qunit"></div>
+		<div id="qunit-fixture">
 
 			<div id="readinglist">
 				<ul>

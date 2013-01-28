@@ -11,3 +11,4 @@ reference/
 .heroku
 .git/
 .idea/
+reports/

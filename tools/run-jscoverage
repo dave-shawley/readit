@@ -1,0 +1,11 @@
+#!/bin/sh
+if test ! -e tools/JSCover-all.jar
+then
+	echo "ERROR: cannot find tools/JSCover-all.jar, you should be running from"
+	echo "       this command from the project root!"
+	exit -1
+fi
+echo "Running JSCover server on port 9001..."
+java -jar tools/JSCover-all.jar -ws --document-root=javascript \
+	--report-dir=reports --port=9001 --no-instrument=test --no-instrument=ext
+

@@ -3,6 +3,7 @@ build
 include
 lib
 man
+reports
 
 .Python
 .coverage

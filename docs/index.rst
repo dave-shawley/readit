@@ -12,6 +12,8 @@ Welcome to Read It's documentation!
    api
    httpapi
 
+.. include:: ../README.rst
+
 Indices and tables
 ==================
 
