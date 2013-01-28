@@ -75,14 +75,32 @@ class UserTests(testing.TestCase):
         self.assertEquals(self.user.object_id, '42')
         self.assertEquals(self.user.object_id, self.user.user_id)
 
-    def test_str_magic(self):
-        self.user.object_id = 'object id'
-        self.user.login(make_login_details(
-            email='email address', identity_url='identity url'))
-        s = str(self.user)
-        self.assertIn(str(self.user.user_id), s)
-        self.assertIn(str(self.user.email), s)
-        self.assertIn(str(self.user.open_id), s)
+    def test_str_magic_behaves(self):
+        oid_details = make_login_details(
+            email='email address',
+            identity_url='identity url')
+        a_user, same_user = readit.User(), readit.User()
+        a_user.login(oid_details)
+        same_user.login(oid_details)
+        a_user.user_id = 'user id'
+        same_user.user_id = a_user.user_id
+        self.assertEquals(str(a_user), str(same_user))
+        
+        different_user = readit.User()
+        different_user.user_id = a_user.user_id
+        different_user.login(make_login_details(
+            email=oid_details.email,
+            identity_url='other url'))
+        self.assertNotEquals(str(a_user), str(different_user))
+        
+        different_user.login(make_login_details(
+            email='other email',
+            identity_url=oid_details.identity_url))
+        self.assertNotEquals(str(a_user), str(different_user))
+        
+        different_user.login(oid_details)
+        different_user.user_id = 'other user id'
+        self.assertNotEquals(str(a_user), str(different_user))
 
     def test_readings_are_ordered_by_time(self):
         now = datetime.datetime.utcnow()
