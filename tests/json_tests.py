@@ -27,7 +27,7 @@ class JSONTests(TestCase):
         result = self.decoder.decode(json_str)
         self.assertEquals(result['x'], item.x)
         self.assertEquals(result['y'], item.y)
-        self.assertEquals(result['object_id'], str(item.object_id))
+        self.assertEquals(result['id'], str(item.object_id))
 
     def test_datetime_support(self):
         ts = datetime.datetime.utcnow()
@@ -73,5 +73,5 @@ class JSONTests(TestCase):
         self.assertEquals(value['title'], a_reading.title)
         self.assertEquals(value['link'], a_reading.link)
         self.assertEquals(value['when'], a_reading.when.isoformat() + 'Z')
-        self.assertEquals(value['object_id'], str(a_reading.object_id))
+        self.assertEquals(value['id'], str(a_reading.object_id))
 

@@ -8,6 +8,14 @@ import readit
 import testing
 
 
+def make_login_details(**attrs):
+    """Returns an object with the specified attributes."""
+    oid_details = mock.Mock()
+    for k, v in attrs.iteritems():
+        setattr(oid_details, k, v)
+    return oid_details
+
+
 class UserTests(testing.TestCase):
     def setUp(self):
         self.random_session_key = os.urandom(16)
@@ -31,47 +39,35 @@ class UserTests(testing.TestCase):
         self.assertFalse(self.user.logged_in)
 
     def test_open_id_property(self):
-        oid_details = mock.Mock()
-        oid_details.identity_url = 'identity url'
-        self.user.login(oid_details)
+        self.user.login(make_login_details(identity_url='identity url'))
         self.assertTrue(self.user.open_id, 'identity url')
 
     def test_name_defaults_to_oid(self):
-        oid_details = mock.Mock()
-        oid_details.identity_url = 'identity url'
-        self.user.login(oid_details)
+        self.user.login(make_login_details(identity_url='identity url'))
         self.assertTrue(self.user.display_name, 'identity url')
 
     def test_email_overrides_oid_for_name(self):
-        oid_details = mock.Mock()
-        oid_details.email = 'email address'
-        oid_details.identity_url = 'identity url'
-        self.user.login(oid_details)
+        self.user.login(make_login_details(
+            email='email address', identity_url='identity url'))
         self.assertTrue(self.user.display_name, 'email address')
 
     def test_nickname_preferred_for_name(self):
-        oid_details = mock.Mock()
-        oid_details.email = 'email address'
-        oid_details.identity_url = 'identity url'
-        oid_details.nickname = 'nickname'
-        self.user.login(oid_details)
+        self.user.login(make_login_details(
+            email='email address', identity_url='identity url',
+            nickname='nickname'))
         self.assertTrue(self.user.display_name, 'nickname')
 
     def test_fullname_preferred_for_name(self):
-        oid_details = mock.Mock()
-        oid_details.email = 'email address'
-        oid_details.fullname = 'full name'
-        oid_details.identity_url = 'identity url'
-        oid_details.nickname = 'nickname'
-        self.user.login(oid_details)
+        self.user.login(make_login_details(
+            email='email address', identity_url='identity url',
+            nickname='nickname', fullname='full name'))
         self.assertTrue(self.user.display_name, 'full name')
 
     def test_login_does_not_change_user_id(self):
         self.assertIsNone(self.user.user_id)
         self.user.user_id = mock.sentinel.user_id
-        oid_details = mock.Mock()
-        oid_details.identity_url = mock.sentinel.identity_url
-        self.user.login(oid_details)
+        self.user.login(make_login_details(
+            identity_url=mock.sentinel.identity_url))
         self.assertEquals(self.user.user_id, mock.sentinel.user_id)
 
     def test_object_id_is_user_id(self):
@@ -81,10 +77,8 @@ class UserTests(testing.TestCase):
 
     def test_str_magic(self):
         self.user.object_id = 'object id'
-        oid_details = mock.Mock()
-        oid_details.email = 'email address'
-        oid_details.identity_url = 'identity url'
-        self.user.login(oid_details)
+        self.user.login(make_login_details(
+            email='email address', identity_url='identity url'))
         s = str(self.user)
         self.assertIn(str(self.user.user_id), s)
         self.assertIn(str(self.user.email), s)
@@ -101,6 +95,7 @@ class UserTests(testing.TestCase):
             [r.title for r in self.user.readings],
             ['title 2', 'title 3', 'title 1']
         )
+
 
 class StorableProtocolTests(testing.StorableItemTestCase):
     StorableClass = readit.User

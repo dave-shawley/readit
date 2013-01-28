@@ -77,7 +77,7 @@ class StorableItemJSONSupport(object):
     ``StorableItem`` instances are actually quite easy to store since the
     ``to_persistence`` method returns a dictionary instance.  All that I do
     is make sure that the method exists, call it when I need to encode an
-    instance, and tack on the ``object_id``.
+    instance, and tack on the ``object_id`` as the ``id`` property.
     
     >>> self = StorableItemJSONSupport()
     >>> class Item(object):
@@ -90,14 +90,14 @@ class StorableItemJSONSupport(object):
     >>> self.can_encode(obj)
     True
     >>> result = self.encode(obj)
-    >>> result['attribute'], result['object_id']
+    >>> result['attribute'], result['id']
     ('value', 1234)
 
-    Note that the ``object_id`` property is passed through as an integer
-    in this case.  Properties will be recursively processed if necessary.
-    This is important since the ``object_id`` is most likely something like
-    a MongoDB py:class:`~pymongo.objectid.ObjectId` instance which is
-    handled by a separate support package.
+    Note that the ``id`` property is passed through as an integer in this
+    case.  Properties will be recursively processed if necessary.  This is
+    important since the ``object_id`` is most likely something like a MongoDB
+    py:class:`~pymongo.objectid.ObjectId` instance which is handled by a
+    separate support package.
     """
     def __init__(self, *args, **kwds):
         super(StorableItemJSONSupport, self).__init__(*args, **kwds)
@@ -107,7 +107,7 @@ class StorableItemJSONSupport(object):
 
     def encode(self, obj):
         encoded = obj.to_persistence()
-        encoded['object_id'] = obj.object_id
+        encoded['id'] = obj.object_id
         return encoded
 
 
