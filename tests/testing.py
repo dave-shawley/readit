@@ -231,7 +231,11 @@ def skipped(f):
     """Make unittest skip the decorated function."""
     @functools.wraps(f)
     def wrapper(*args):
-        sys.stderr.write('\n*** IGNORING %s.%s\n' % (f.__module__, f.__name__))
+        try:
+            name = str(f.im_class) + '.' + f.__name__
+        except AttributeError:
+            name = f.__module__ + '.' + f.__name__
+        sys.stderr.write('\n*** IGNORING %s\n' % (name))
     return wrapper
 
 

@@ -106,9 +106,10 @@ class UserTests(testing.TestCase):
         now = datetime.datetime.utcnow()
         yesterday = now - datetime.timedelta(days=1)
         tomorrow = now + datetime.timedelta(days=1)
-        self.user.add_reading(readit.Reading('title 1', when=yesterday))
-        self.user.add_reading(readit.Reading('title 2', when=tomorrow))
-        self.user.add_reading(readit.Reading('title 3', when=now))
+        self.user.add_readings([
+            readit.Reading('title 1', when=yesterday),
+            readit.Reading('title 2', when=tomorrow),
+            readit.Reading('title 3', when=now)])
         self.assertListEqual(
             [r.title for r in self.user.readings],
             ['title 2', 'title 3', 'title 1']

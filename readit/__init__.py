@@ -9,6 +9,8 @@ from .flaskapp import app, Application
 
 
 class MoreThanOneResultError(Exception):
+    """You will encounter me when a single instance is expected and more
+    than one is found or supplied."""
     pass
 
 

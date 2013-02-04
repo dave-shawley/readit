@@ -8,6 +8,7 @@ Welcome to Read It's documentation!
 
 .. toctree::
    :maxdepth: 2
+   :hidden:
    
    api
    httpapi

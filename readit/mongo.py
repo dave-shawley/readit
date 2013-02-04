@@ -62,17 +62,18 @@ class Storage(object):
 
     def save(self, storage_bin, storable):
         """Save *storable* into the data subset *storage_bin*.
+
         :param storage_bin: the namespace to store the object in.
         :param storable: the object to save.  This object may be modified
-        before returning.
+            before returning.
 
         The property set to store as a Mongo document is derived by calling
-        :py:meth:`to_persistence` method.  Then if *storable* has a property
-        named ``object_id`` then it's value is used to construct a
+        :py:meth:`~Storable.to_persistence` method.  Then if *storable* has
+        a property named ``object_id`` then it's value is used to construct a
         :py:class:`~bson.objectid.ObjectId` instance which is stored as the
         ``_id`` attribute.  Finally, the document is written to the storage
-        engine.  If the ``object_id`` property was ``None`` initially, then it
-        is updated with the ``_id`` attribute before returning.
+        engine.  If the ``object_id`` property was ``None`` initially, then
+        it is updated with the ``_id`` attribute before returning.
         """
         persist = storable.to_persistence()
         if storable.object_id is not None:
@@ -83,6 +84,12 @@ class Storage(object):
             storable.object_id = str(persist['_id'])
 
     def retrieve_one(self, storage_bin, **arguments):
+        """Answers the result of calling :py:meth:`~Storage.retrieve` with
+        the specified parameters.  The result is required to be a single
+        object.
+
+        :raises: :py:class:`readit.MoreThanOneResultError` when more than one
+                 result is returned by :py:meth:`~Storage.retrieve`"""
         result = self.retrieve(storage_bin, **arguments)
         if len(result) > 1:
             raise readit.MoreThanOneResultError()
@@ -90,17 +97,38 @@ class Storage(object):
             return None
         return result[0]
 
-    def retrieve(self, storage_bin, storage_id=None, clazz=None, **constraint):
+    def retrieve(self, storage_bin, storage_id=None, cls=None, **constraint):
+        """My answer is a list of objects that match the parameters.
+
+        :param storage_bin: identifies the collection to retrieve from
+        :param storage_id: identifies the Object ID to retrieve (*optional*)
+        :param cls: a class that implements the :py:class:`Storable` protocol.
+        :param constraint: the constraint to pass as the Mongo query.
+
+        This method retrieves a set of objects from the Mongo collection
+        named :py:data:`storage_bin` and optionally uses a factory to process
+        the resulting documents.
+
+        The :py:data:`cls` optional parameter identifies a class that
+        implements the :py:class:`Storable` protocol. If this class is
+        specified, then its :py:meth:`~Storable.from_persistence` class method
+        is called for each retrieved document and the manufactured object is
+        placed into the result set instead of the Mongo document.
+
+        The remaining parameters form the search constraint.  If no
+        constraint is supplied, then all of the documents in the collection
+        are returned.
+        """
         self.logger.debug('looking up %s in %s', constraint, storage_bin)
         conn = self.get_mongo_connection()
         if storage_id is not None:
             constraint['_id'] = ObjectId(storage_id)
         values = conn[storage_bin].find(constraint)
-        if values and clazz:
+        if values and cls:
             def manufacture_object(data):
                 self.logger.debug('found %s', data)
                 object_id = data.pop('_id')
-                instance = clazz.from_persistence(data)
+                instance = cls.from_persistence(data)
                 instance.object_id = str(object_id)
                 return instance
             values = (manufacture_object(data) for data in values)

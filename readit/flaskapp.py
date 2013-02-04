@@ -83,7 +83,7 @@ class Application(flask.ext.heroku_runner.HerokuApp, readit.LinkMap):
     # registered as @openid.after_login
     def _login_succeeded(self, response):
         result = flask.g.db.retrieve_one('users', email=response.email,
-                clazz=readit.User)
+                cls=readit.User)
         if result:
             flask.g.user = result
             flask.g.user.login(response)
@@ -155,7 +155,7 @@ class Application(flask.ext.heroku_runner.HerokuApp, readit.LinkMap):
         """
         if flask.request.is_xhr and readit.helpers.is_redirect(response):
             location = response.headers['location']
-            app.logger.debug('transforming redirect "%s" into JSON', location)
+            self.logger.debug('transforming redirect "%s" into JSON', location)
             response = self.jsonify({'redirect_to': location})
         return super(Application, self).process_response(response)
 
@@ -266,8 +266,10 @@ def reading_list(session_key):
                 flask.g.db, flask.g.user.user_id)
         data = flask.g.db.retrieve('readings',
                 user_id=flask.g.user.user_id,
-                clazz=readit.Reading)
-        return app.jsonify({'actions': app.links, 'readings': data})
+                cls=readit.Reading)
+        flask.g.user.add_readings(data)
+        return app.jsonify({
+            'actions': app.links, 'readings': flask.g.user.readings})
     return flask.render_template('list.html', actions=app.links)
 
 

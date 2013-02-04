@@ -2,6 +2,8 @@
 Read It's Python API
 ====================
 
+.. autoclass:: readit.MoreThanOneResultError
+
 .. automodule:: readit.reading
    
    .. autoclass:: Reading

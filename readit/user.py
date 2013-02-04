@@ -46,8 +46,9 @@ class User(object):
     False
     
     The persistence aspects of a user are handled by implementing the expected
-    StorableItem protocol using the :py:attr:`user_id` attribute as the unique
-    identifier for a user.  This is why it is aliased as :py:attr:`object_id`.
+    :py:class:`~readit.mongo.Storable` protocol using the :py:attr:`user_id`
+    attribute as the unique identifier for a user.  This is why it is aliased
+    as :py:attr:`object_id`.
     
     >>> u = User.from_persistence({'email': 'dave@example.com',
     ...   'display_name': 'Dave Shawley',
@@ -142,6 +143,16 @@ class User(object):
         """Appends an item to the list of things that this user has read."""
         self._readings.add(reading)
 
+    def add_readings(self, readings):
+        """Appends a sequence of read items to my list.
+
+        :param readings: a sequence of items to add
+
+        This is the same as calling :py:meth:`~User.add_reading` for each
+        item in :py:obj:`readings`."""
+        for r in readings:
+            self.add_reading(r)
+
     def remove_reading(self, reading):
         """Removes a reading from the user's list."""
         self._readings.remove(reading)
@@ -166,8 +177,8 @@ class User(object):
         return {'email': self.email, 'display_name': self.display_name}
 
     @classmethod
-    def from_persistence(clazz, value_dict):
-        instance = clazz()
+    def from_persistence(cls, value_dict):
+        instance = cls()
         instance.email = value_dict['email']
         instance.display_name = value_dict.get('display_name', instance.email)
         return instance

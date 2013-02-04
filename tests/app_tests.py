@@ -1,5 +1,6 @@
 from __future__ import with_statement
 
+import json
 import logging
 import os
 import os.path
@@ -91,7 +92,7 @@ class LoginTests(ReaditTestCase):
             readit.app._login_succeeded(self.fake_oid_details)
             storage.retrieve_one.assert_called_once_with('users',
                     email=self.fake_oid_details.email,
-                    clazz=readit.User)
+                    cls=readit.User)
             self.assertEquals(flask.session['user_id'],
                     self.fake_user.user_id)
 
@@ -188,7 +189,7 @@ class ApplicationTests(ReaditTestCase):
     @mock.patch(STORAGE_CLASS)
     def test_reading_list_as_json(self, storage_class):
         storage = storage_class.return_value
-        storage.retrieve.return_value = {'readings': {}}
+        storage.retrieve.return_value = []
         self.load_session(session_key=self.session_key)
         rv = self.client.get(self.get_session_url_for('/readings'), headers=[
             ('Accept', 'application/json,text/javascript,*/*;q=0.1')])
@@ -203,27 +204,34 @@ class ApplicationTests(ReaditTestCase):
         self.load_session(session_key=self.session_key, user_id='<UserId>')
         with readit.app.test_request_context(reading_link):
             readit.app.preprocess_request()
-            storage.retrieve.return_value = {'readings': {}}
+            storage.retrieve.return_value = []
             self.client.get(reading_link, headers=headers)
             storage.retrieve.assert_called_with('readings',
-                    user_id='<UserId>', clazz=readit.Reading)
+                    user_id='<UserId>', cls=readit.Reading)
 
-    @skipped
+    @mock.patch('readit.User')
     @mock.patch(STORAGE_CLASS)
-    def test_readings_retrieved_through_user(self, storage_class):
-        storage_class.side_effect = self.create_failure_side_effect(
-            STORAGE_CLASS + ' should not be created'
-        )
+    def test_readings_retrieved_through_user(self, storage_class, user_class):
+        db = mock.Mock()
+        db.retrieve.return_value = [readit.Reading(title='<ShouldNotSeeThis>')]
+        storage_class.return_value = db
+
+        a_user = mock.Mock()
+        a_user.readings = [readit.Reading(title='<ShouldSeeThis>')]
+        user_class.return_value = a_user
+
         reading_link = self.get_session_url_for('/readings')
         headers = [('Accept', 'application/json')]
         self.load_session(session_key=self.session_key, user_id='<UserId>')
         with readit.app.test_request_context(reading_link):
             readit.app.preprocess_request()
-            a_user = mock.Mock()
-            a_user.user_id = '<UserId>'
-            a_user.readings.return_value = []
-            self.client.get(reading_link, headers=headers)
-            a_user.readings.assert_called_with()
+            rsp = self.client.get(reading_link, headers=headers)
+            self.assert_is_http_success(rsp)
+            json_obj = json.loads(rsp.data)
+            self.assertEqual(len(json_obj['readings']), 1)
+            self.assertEqual(json_obj['readings'][0]['title'],
+                '<ShouldSeeThis>')
+
 
     @mock.patch(STORAGE_CLASS)
     def test_add_json_reading(self, storage_class):

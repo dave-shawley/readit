@@ -48,7 +48,7 @@ class JSONDecoder(flask.json.JSONDecoder):
 
 
 class DateTimeJSONSupport(object):
-    """I encode :py:class:`datetime.datetime` instances ISO8601 stirngs.
+    """I encode :py:class:`datetime.datetime` instances ISO8601 strings.
     
     >>> self = DateTimeJSONSupport()
     >>> now = datetime.datetime(1999, 12, 31, 23, 59, 59)

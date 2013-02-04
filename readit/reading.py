@@ -99,9 +99,9 @@ class Reading(object):
                 'user_id': self._user_id}
     
     @classmethod
-    def from_persistence(clazz, persist_dict):
+    def from_persistence(cls, persist_dict):
         # requires all attributes
-        instance = clazz()
+        instance = cls()
         instance.title = persist_dict['title']
         instance.link = persist_dict['link']
         instance.when = persist_dict['when']

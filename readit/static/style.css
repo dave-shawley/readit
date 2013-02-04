@@ -13,10 +13,7 @@ tr > * {
     background-color: rgb(240,240,240);
     font-family: Computer Modern Sans-Serif, sans-serif;
     border: 1pt solid gray;
-    padding-left: 1em;
-    padding-right: 1em;
-    padding-top: 4pt;
-    padding-bottom: 2pt;
+    padding: 4pt 1em 2pt;
     border-radius: 6pt;
     text-decoration: none;
     font-size: 12pt;
@@ -46,10 +43,7 @@ tr > * {
     color: black;
     margin-left: 10%;
     margin-right: 10%;
-    padding-top: 12pt;
-    padding-left: 5%;
-    padding-right: 5%;
-    padding-bottom: 12pt;
+    padding: 12pt 5%;
     font-family: Computer Modern Slanted, serif;
     font-size: 10pt;
     font-style: italic;
