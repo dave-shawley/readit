@@ -106,14 +106,21 @@
         };
         that.addMethod("showReading", showReading,
             "Updates the UI to match a reading.");
+
         function update() {
+            var $template = jQuery(sel.reading_li);
+            $template
+                .parent()
+                .children()
+                .filter(":not([class~=" + sel.template + "])")
+                .remove();
             that.readings.forEach(function (aReading) {
                 var $elm = jQuery("#" + aReading.id);
                 if ($elm.length === 0) {
-                    $elm = jQuery(sel.reading_li).clone();
+                    $elm = $template.clone();
                     $elm.prop("id", aReading.id);
                     $elm.removeClass(sel.template)
-                        .insertBefore(sel.reading_li);
+                        .insertBefore($template);
                 }
                 $elm.click(function () { showReading(aReading); });
                 updateUiForReading($elm, aReading);
@@ -137,7 +144,7 @@
                 success: function (data) {
                     debugMessage("addReading() success", data);
                     if (!wasRedirected(data)) {
-                        that.readings.push(new Reading(data.new_reading));
+                        that.readings.unshift(new Reading(data.new_reading));
                         that.update();
                         if (document.jqt) {
                             document.jqt.goBack();

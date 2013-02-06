@@ -229,49 +229,49 @@ $(document).ready(function() {
 		verifyElementMatchesReading($("#readinginfo"), aReading);
 	});
 
+	function addAReading(readitApp, title, newID) {
+	    var aReading = {
+            id: newID,
+            title: title,
+            link: "http://link/to/" + newID,
+            when: new Date()
+        };
+	    mockedAjax.addResponse(200, "OK", [], {
+            json: {
+                new_reading: {
+                    title: aReading.title,
+                    id: aReading.id,
+                    link: aReading.link,
+                    when: aReading.when.toISOString()
+                }
+            }
+        });
+        addReaditActions(readitApp);
+        readitApp.addReading(aReading);
+        return aReading;
+    };
+
 	test("addReading() updates the UI on success", function() {
-		var r = readit(),
-				aReading = {
-					title: 'reading title',
-					link: 'http://link.to.reading/',
-					when: new Date()
-				};
-		mockedAjax.addResponse(200, "OK", [], {
-			json: {
-				new_reading: {
-					title: aReading.title,
-					id: 'id12345',
-					link: aReading.link,
-					when: aReading.when.toISOString()
-				}
-			}
-		});
-		addReaditActions(r);
-		r.addReading(aReading);
+		var r = readit();
+		var aReading = addAReading(r, 'reading title', 'id12345');
 		verifyElementMatchesReading($("#" + r.readings[0].id), r.readings[0]);
 	});
 
 	test("addReading() marks outside links with rel='external'", function() {
-		var r = readit({debug: true}),
-				aReading = {
-					title: 'reading title',
-					link: 'http://link.to.reading/',
-					when: new Date(),
-					id: 'id12345'
-				};
-		mockedAjax.addResponse(200, "OK", [], {
-			json: {
-				new_reading: {
-					title: aReading.title,
-					id: aReading.id,
-					link: aReading.link,
-					when: aReading.when.toISOString()
-				}
-			}
-		});
-		addReaditActions(r);
-		r.addReading(aReading);
+		var r = readit({debug: true});
+		var aReading = addAReading(r, 'readint title', 'id12345');
 		equal($("#" + aReading.id + " .link").prop("rel"), "external");
+	});
+
+	test("addReading() places new reading at the top of list", function() {
+		var r = readit({debug: true});
+		var aReading;
+		
+		aReading = addAReading(r, 'reading title', 'id1');
+		equal(document.getElementById('id1').previousElementSibling, null);
+	    
+		aReading = addAReading(r, 'reading title', 'id2');
+		equal(document.getElementById('id2').previousElementSibling, null);
 	});
 
 });
